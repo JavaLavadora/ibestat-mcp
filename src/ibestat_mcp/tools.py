@@ -6,8 +6,6 @@ parsed, structured data ready for MCP server responses.
 
 from __future__ import annotations
 
-from typing import Any
-
 from ibestat_mcp.client import IbestatClient
 from ibestat_mcp.models import DataRow, DatasetInfo, DatasetSummary
 from ibestat_mcp.parser import extract_localized_text, parse_dimensions, parse_observations
@@ -48,11 +46,12 @@ async def search_datasets(
 
         name = extract_localized_text(entry.get("name"))
         description_field = entry.get("description")
-        description = (
+        description_raw = (
             extract_localized_text(description_field)
             if description_field is not None
             else None
         )
+        description = description_raw or None
         link = entry.get("visualizerHtmlLink", "")
 
         results.append(
