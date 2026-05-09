@@ -201,13 +201,7 @@ def parse_observations(response: dict) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         for row_flat in range(total_rows):
             # Compute multi-index for non-MEDIDAS dimensions
-            remaining = row_flat
             multi_idx_non_medidas: list[int] = []
-            for s in non_medidas_sizes:
-                multi_idx_non_medidas.append(remaining // (total_rows // s if s else 1))
-                # Actually, let's compute properly
-            # Recompute using proper strides for non-medidas dims
-            multi_idx_non_medidas = []
             remaining = row_flat
             for k, s in enumerate(non_medidas_sizes):
                 # stride for this position = product of remaining non-medidas sizes

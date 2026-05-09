@@ -259,8 +259,8 @@ class TestParseObservations:
         )
         rows = parse_observations(response)
         assert len(rows) == 2
-        assert rows[0] == {"Territori": "Alaro", "Poblacio": 100.0}
-        assert rows[1] == {"Territori": "Alcudia", "Poblacio": 200.0}
+        assert rows[0] == {"Territori": "Alaro", "Poblacio": 100}
+        assert rows[1] == {"Territori": "Alcudia", "Poblacio": 200}
 
     def test_medidas_pivoted(self):
         """MEDIDAS values become column names, not row values."""
@@ -290,7 +290,7 @@ class TestParseObservations:
         )
         rows = parse_observations(response)
         assert len(rows) == 1
-        assert rows[0] == {"Territori": "Alaro", "Poblacio": 100.0, "Variacio": 5.0}
+        assert rows[0] == {"Territori": "Alaro", "Poblacio": 100, "Variacio": 5}
 
     def test_multi_dimensional_with_medidas(self):
         """3 dimensions: TERRITORIO(2) x SEXO(2) x MEDIDAS(2)."""
@@ -329,10 +329,10 @@ class TestParseObservations:
         )
         rows = parse_observations(response)
         assert len(rows) == 4  # 2 territories x 2 sexes
-        assert rows[0] == {"Territori": "Alaro", "Sexe": "Total", "Poblacio": 100.0, "Variacio": 5.0}
-        assert rows[1] == {"Territori": "Alaro", "Sexe": "Dones", "Poblacio": 60.0, "Variacio": 3.0}
-        assert rows[2] == {"Territori": "Alcudia", "Sexe": "Total", "Poblacio": 200.0, "Variacio": 10.0}
-        assert rows[3] == {"Territori": "Alcudia", "Sexe": "Dones", "Poblacio": 110.0, "Variacio": 6.0}
+        assert rows[0] == {"Territori": "Alaro", "Sexe": "Total", "Poblacio": 100, "Variacio": 5}
+        assert rows[1] == {"Territori": "Alaro", "Sexe": "Dones", "Poblacio": 60, "Variacio": 3}
+        assert rows[2] == {"Territori": "Alcudia", "Sexe": "Total", "Poblacio": 200, "Variacio": 10}
+        assert rows[3] == {"Territori": "Alcudia", "Sexe": "Dones", "Poblacio": 110, "Variacio": 6}
 
     def test_null_observations(self):
         """Empty observation values should become None."""
@@ -362,7 +362,7 @@ class TestParseObservations:
         )
         rows = parse_observations(response)
         assert len(rows) == 1
-        assert rows[0]["Poblacio"] == 100.0
+        assert rows[0]["Poblacio"] == 100
         assert rows[0]["Variacio"] is None
 
     def test_with_real_fixture(self, dataset_metadata_response):
@@ -423,8 +423,56 @@ class TestParseObservations:
         rows = parse_observations(response)
         assert len(rows) == 1
         # VAR is at index 0 so value 5, POP at index 1 so value 100
-        assert rows[0]["Variacio"] == 5.0
-        assert rows[0]["Poblacio"] == 100.0
+        assert rows[0]["Variacio"] == 5
+        assert rows[0]["Poblacio"] == 100
+
+    def test_no_medidas_dimension(self):
+        """Datasets without MEDIDAS should produce a generic 'value' column."""
+        response = {
+            "metadata": {
+                "dimensions": {
+                    "dimension": [
+                        {
+                            "id": "TERRITORIO",
+                            "name": {"text": [{"value": "Territori", "lang": "ca"}]},
+                            "type": "GEOGRAPHIC_DIMENSION",
+                            "dimensionValues": {
+                                "value": [
+                                    {"id": "07001", "name": {"text": [{"value": "Alaro", "lang": "ca"}]}},
+                                    {"id": "07002", "name": {"text": [{"value": "Alcudia", "lang": "ca"}]}},
+                                ],
+                                "total": 2,
+                            },
+                        },
+                    ]
+                }
+            },
+            "data": {
+                "dimensions": {
+                    "dimension": [
+                        {
+                            "dimensionId": "TERRITORIO",
+                            "type": "GEOGRAPHIC_DIMENSION",
+                            "representations": {
+                                "representation": [
+                                    {"code": "07001", "index": 0},
+                                    {"code": "07002", "index": 1},
+                                ],
+                                "total": 2,
+                            },
+                        },
+                    ]
+                },
+                "observations": "500 | 1000",
+            },
+        }
+        rows = parse_observations(response)
+        assert len(rows) == 2
+        assert "value" in rows[0]
+        assert rows[0]["Territori"] == "Alaro"
+        assert rows[0]["value"] == 500
+        assert rows[1]["Territori"] == "Alcudia"
+        assert rows[1]["value"] == 1000
 
     def test_integer_and_float_values(self):
         """Integer observation values should be returned as int, floats as float."""
