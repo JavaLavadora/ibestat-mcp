@@ -45,6 +45,7 @@ class IbestatClient:
     async def __aexit__(self, *args: Any) -> None:
         if self._http:
             await self._http.aclose()
+            self._http = None
 
     def _client(self) -> httpx.AsyncClient:
         if self._http is None:
@@ -80,13 +81,16 @@ class IbestatClient:
             all_params.extend(params)
         try:
             response = await self._client().get(url, params=all_params)
-        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError):
+        except (httpx.TimeoutException, httpx.NetworkError):
             raise IbestatError(
                 "IBESTAT service is unavailable. Please try again later."
             )
         if response.status_code == 404:
             raise IbestatError(f"Dataset not found: {url}")
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            raise IbestatError(f"IBESTAT API error ({response.status_code}): {e}") from e
         return response.json()
 
     async def search_datasets(self, query: str, limit: int = 10) -> dict[str, Any]:

@@ -261,6 +261,17 @@ class TestErrorHandling:
             with pytest.raises(IbestatError, match="unavailable"):
                 await client.get_dataset_metadata("000001A_000001")
 
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_raises_on_500(self) -> None:
+        """500 response raises IbestatError with 'API error' message."""
+        respx.get(url__startswith=f"{BASE_URL}/datasets").mock(
+            return_value=httpx.Response(500)
+        )
+        async with IbestatClient() as client:
+            with pytest.raises(IbestatError, match="API error"):
+                await client.search_datasets("test")
+
 
 # ===========================================================================
 # TestContextManager
