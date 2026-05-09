@@ -59,3 +59,11 @@ class TestDatasetInfo:
         )
         assert info.name == "Poblacio municipal empadronada segons el sexe"
         assert len(info.dimensions) == 1
+
+
+class TestDataRow:
+    def test_data_row_is_dict(self):
+        from ibestat_mcp.models import DataRow
+        row: DataRow = {"Territori": "Alaro", "Poblacio padro": 2035, "Taxa variacio": -0.97}
+        assert isinstance(row, dict)
+        assert row["Territori"] == "Alaro"

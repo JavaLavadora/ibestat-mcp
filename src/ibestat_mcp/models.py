@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -22,3 +24,6 @@ class DimensionInfo(BaseModel):
 class DatasetInfo(BaseModel):
     name: str
     dimensions: list[DimensionInfo]
+
+
+DataRow = dict[str, Any]
