@@ -23,5 +23,11 @@ dev = [
 [project.scripts]
 ibestat-mcp = "ibestat_mcp.server:main"
 
+[tool.pytest.ini_options]
+markers = [
+    "e2e: end-to-end tests hitting real IBESTAT API (deselect with '-m not e2e')",
+]
+asyncio_mode = "auto"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/ibestat_mcp"]
