@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ibestat-mcp"
+version = "0.1.0"
+description = "MCP server for IBESTAT (Institut d'Estadistica de les Illes Balears) eDades API"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "respx>=0.21.0",
+]
+
+[project.scripts]
+ibestat-mcp = "ibestat_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ibestat_mcp"]
