@@ -1,0 +1,121 @@
+{
+    "dataset": [
+        {
+            "id": "000001A_000001",
+            "kind": "statisticalResources#dataset",
+            "name": {
+                "text": [
+                    {
+                        "value": "Poblaci\u00f3 municipal empadronada segons el sexe. Municipis de les Illes Balears per anys",
+                        "lang": "ca"
+                    },
+                    {
+                        "value": "Poblaci\u00f3n municipal empadronada seg\u00fan sexo. Municipios de las Illes Balears por a\u00f1os",
+                        "lang": "es"
+                    }
+                ]
+            },
+            "selfLink": {
+                "kind": "statisticalResources#dataset",
+                "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000001A_000001/1.0"
+            },
+            "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000001A_000001(1.0)",
+            "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000001A_000001&version=1.0"
+        },
+        {
+            "id": "000001A_000001",
+            "kind": "statisticalResources#dataset",
+            "name": {
+                "text": [
+                    {
+                        "value": "Poblaci\u00f3n municipal empadronada seg\u00fan sexo. Municipios de las Illes Balears por a\u00f1os",
+                        "lang": "es"
+                    },
+                    {
+                        "value": "Poblaci\u00f3 municipal empadronada segons el sexe. Municipis de les Illes Balears per anys",
+                        "lang": "ca"
+                    }
+                ]
+            },
+            "selfLink": {
+                "kind": "statisticalResources#dataset",
+                "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000001A_000001/1.1"
+            },
+            "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000001A_000001(1.1)",
+            "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000001A_000001&version=1.1"
+        },
+        {
+            "id": "000004A_000001",
+            "kind": "statisticalResources#dataset",
+            "name": {
+                "text": [
+                    {
+                        "value": "Los 100 nombres de la poblaci\u00f3n m\u00e1s comunes seg\u00fan lugar de nacimiento y sexo. Illes Balears",
+                        "lang": "es"
+                    },
+                    {
+                        "value": "Els 100 noms de la poblaci\u00f3 m\u00e9s comuns segons lloc de naixement i sexe. Illes Balears",
+                        "lang": "ca"
+                    }
+                ]
+            },
+            "selfLink": {
+                "kind": "statisticalResources#dataset",
+                "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000004A_000001/1.0"
+            },
+            "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000004A_000001(1.0)",
+            "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000004A_000001&version=1.0"
+        },
+        {
+            "id": "000004A_000001",
+            "kind": "statisticalResources#dataset",
+            "name": {
+                "text": [
+                    {
+                        "value": "Els 100 noms de la poblaci\u00f3 m\u00e9s comuns segons lloc de naixement i sexe. Illes Balears",
+                        "lang": "ca"
+                    },
+                    {
+                        "value": "Los 100 nombres de la poblaci\u00f3n m\u00e1s comunes seg\u00fan lugar de nacimiento y sexo. Illes Balears",
+                        "lang": "es"
+                    }
+                ]
+            },
+            "selfLink": {
+                "kind": "statisticalResources#dataset",
+                "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000004A_000001/1.1"
+            },
+            "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000004A_000001(1.1)",
+            "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000004A_000001&version=1.1"
+        },
+        {
+            "id": "000004A_000002",
+            "kind": "statisticalResources#dataset",
+            "name": {
+                "text": [
+                    {
+                        "value": "Los 100 nombres de la poblaci\u00f3n m\u00e1s comunes seg\u00fan nacionalidad y sexo. Illes Balears",
+                        "lang": "es"
+                    },
+                    {
+                        "value": "Els 100 noms de la poblaci\u00f3 m\u00e9s comuns segons nacionalitat i sexe. Illes Balears",
+                        "lang": "ca"
+                    }
+                ]
+            },
+            "selfLink": {
+                "kind": "statisticalResources#dataset",
+                "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000004A_000002/1.0"
+            },
+            "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000004A_000002(1.0)",
+            "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000004A_000002&version=1.0"
+        }
+    ],
+    "kind": "statisticalResources#datasets",
+    "total": 183,
+    "limit": 5,
+    "offset": 0,
+    "selfLink": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets?query=name ILIKE 'poblaci'&limit=5&offset=0",
+    "nextLink": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets?query=name ILIKE 'poblaci'&limit=5&offset=5",
+    "lastLink": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets?query=name ILIKE 'poblaci'&limit=5&offset=180"
+}

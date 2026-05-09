@@ -1,0 +1,391 @@
+{
+    "id": "000001A_000001",
+    "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000001A_000001(1.1)",
+    "selfLink": {
+        "kind": "statisticalResources#dataset",
+        "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000001A_000001/1.1"
+    },
+    "parentLink": {
+        "kind": "statisticalResources#datasets",
+        "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets"
+    },
+    "name": {
+        "text": [
+            {
+                "value": "Poblaci\u00f3n municipal empadronada seg\u00fan sexo. Municipios de las Illes Balears por a\u00f1os",
+                "lang": "es"
+            },
+            {
+                "value": "Poblaci\u00f3 municipal empadronada segons el sexe. Municipis de les Illes Balears per anys",
+                "lang": "ca"
+            }
+        ]
+    },
+    "description": {
+        "text": [
+            {
+                "value": "<font face=\"Arial, Verdana, sans-serif\"><span style=\"font-size: 11px;\">Es proporciona informaci\u00f3 sobre les xifres oficials de poblaci\u00f3 municipal empadronada, en aplicaci\u00f3 de la Llei de Bases del R\u00e8gim Local (Art. 17), i desagregada per sexe. S'ofereixen dades dels municipis de les Illes Balears referides a l'1 de gener de cada any).</span></font>",
+                "lang": "ca"
+            },
+            {
+                "value": "<font face=\"Arial, Verdana, sans-serif\"><span style=\"font-size: 11px;\">Se proporciona informaci\u00f3n sobre las cifras oficiales de poblaci\u00f3n municipal empadronada, en aplicaci\u00f3n de la Ley de Bases del R\u00e9gimen Local (Art. 17), y desagregada por sexo. Se ofrecen datos de los municipios de las Illes Balears referidas al 1 de enero de cada a\u00f1o.</span></font>",
+                "lang": "es"
+            }
+        ]
+    },
+    "selectedLanguages": {
+        "language": [
+            "ca",
+            "es",
+            "en"
+        ],
+        "total": 3
+    },
+    "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000001A_000001&version=1.1",
+    "data": {
+        "dimensions": {
+            "dimension": [
+                {
+                    "dimensionId": "TERRITORIO",
+                    "representations": {
+                        "representation": [
+                            {
+                                "code": "07045",
+                                "index": 0
+                            },
+                            {
+                                "code": "07004",
+                                "index": 1
+                            },
+                            {
+                                "code": "07029",
+                                "index": 2
+                            },
+                            {
+                                "code": "07052",
+                                "index": 3
+                            },
+                            {
+                                "code": "07018",
+                                "index": 4
+                            },
+                            {
+                                "code": "07901",
+                                "index": 5
+                            },
+                            {
+                                "code": "07040",
+                                "index": 6
+                            },
+                            {
+                                "code": "07051",
+                                "index": 7
+                            },
+                            {
+                                "code": "07013",
+                                "index": 8
+                            },
+                            {
+                                "code": "07033",
+                                "index": 9
+                            },
+                            {
+                                "code": "07036",
+                                "index": 10
+                            },
+                            {
+                                "code": "07043",
+                                "index": 11
+                            },
+                            {
+                                "code": "07047",
+                                "index": 12
+                            },
+                            {
+                                "code": "07005",
+                                "index": 13
+                            },
+                            {
+                                "code": "07902",
+                                "index": 14
+                            },
+                            {
+                                "code": "07022",
+                                "index": 15
+                            },
+                            {
+                                "code": "07031",
+                                "index": 16
+                            },
+                            {
+                                "code": "07015",
+                                "index": 17
+                            },
+                            {
+                                "code": "07006",
+                                "index": 18
+                            },
+                            {
+                                "code": "07041",
+                                "index": 19
+                            },
+                            {
+                                "code": "07030",
+                                "index": 20
+                            },
+                            {
+                                "code": "07050",
+                                "index": 21
+                            },
+                            {
+                                "code": "07037",
+                                "index": 22
+                            },
+                            {
+                                "code": "07014",
+                                "index": 23
+                            },
+                            {
+                                "code": "07038",
+                                "index": 24
+                            },
+                            {
+                                "code": "07003",
+                                "index": 25
+                            },
+                            {
+                                "code": "07026",
+                                "index": 26
+                            },
+                            {
+                                "code": "07056",
+                                "index": 27
+                            },
+                            {
+                                "code": "07009",
+                                "index": 28
+                            },
+                            {
+                                "code": "07035",
+                                "index": 29
+                            },
+                            {
+                                "code": "07059",
+                                "index": 30
+                            },
+                            {
+                                "code": "07032",
+                                "index": 31
+                            },
+                            {
+                                "code": "07058",
+                                "index": 32
+                            },
+                            {
+                                "code": "07049",
+                                "index": 33
+                            },
+                            {
+                                "code": "07024",
+                                "index": 34
+                            },
+                            {
+                                "code": "07021",
+                                "index": 35
+                            },
+                            {
+                                "code": "07042",
+                                "index": 36
+                            },
+                            {
+                                "code": "07001",
+                                "index": 37
+                            },
+                            {
+                                "code": "07060",
+                                "index": 38
+                            },
+                            {
+                                "code": "07063",
+                                "index": 39
+                            },
+                            {
+                                "code": "07016",
+                                "index": 40
+                            },
+                            {
+                                "code": "07039",
+                                "index": 41
+                            },
+                            {
+                                "code": "07062",
+                                "index": 42
+                            },
+                            {
+                                "code": "07044",
+                                "index": 43
+                            },
+                            {
+                                "code": "07028",
+                                "index": 44
+                            },
+                            {
+                                "code": "07025",
+                                "index": 45
+                            },
+                            {
+                                "code": "07053",
+                                "index": 46
+                            },
+                            {
+                                "code": "07061",
+                                "index": 47
+                            },
+                            {
+                                "code": "07011",
+                                "index": 48
+                            },
+                            {
+                                "code": "07048",
+                                "index": 49
+                            },
+                            {
+                                "code": "07027",
+                                "index": 50
+                            },
+                            {
+                                "code": "07020",
+                                "index": 51
+                            },
+                            {
+                                "code": "07007",
+                                "index": 52
+                            },
+                            {
+                                "code": "07064",
+                                "index": 53
+                            },
+                            {
+                                "code": "07055",
+                                "index": 54
+                            },
+                            {
+                                "code": "07034",
+                                "index": 55
+                            },
+                            {
+                                "code": "07054",
+                                "index": 56
+                            },
+                            {
+                                "code": "07046",
+                                "index": 57
+                            },
+                            {
+                                "code": "07057",
+                                "index": 58
+                            },
+                            {
+                                "code": "07023",
+                                "index": 59
+                            },
+                            {
+                                "code": "07065",
+                                "index": 60
+                            },
+                            {
+                                "code": "07019",
+                                "index": 61
+                            },
+                            {
+                                "code": "07010",
+                                "index": 62
+                            },
+                            {
+                                "code": "07008",
+                                "index": 63
+                            },
+                            {
+                                "code": "07017",
+                                "index": 64
+                            },
+                            {
+                                "code": "07012",
+                                "index": 65
+                            },
+                            {
+                                "code": "07002",
+                                "index": 66
+                            }
+                        ],
+                        "total": 67
+                    }
+                },
+                {
+                    "dimensionId": "TIME_PERIOD",
+                    "representations": {
+                        "representation": [
+                            {
+                                "code": "2024",
+                                "index": 0
+                            }
+                        ],
+                        "total": 1
+                    }
+                },
+                {
+                    "dimensionId": "SEXO",
+                    "representations": {
+                        "representation": [
+                            {
+                                "code": "_T",
+                                "index": 0
+                            },
+                            {
+                                "code": "M",
+                                "index": 1
+                            },
+                            {
+                                "code": "F",
+                                "index": 2
+                            }
+                        ],
+                        "total": 3
+                    }
+                },
+                {
+                    "dimensionId": "MEDIDAS",
+                    "representations": {
+                        "representation": [
+                            {
+                                "code": "POBLACION_PADRON_TVA",
+                                "index": 0
+                            },
+                            {
+                                "code": "POBLACION_PADRON",
+                                "index": 1
+                            },
+                            {
+                                "code": "POBLACION_PADRON_VA",
+                                "index": 2
+                            }
+                        ],
+                        "total": 3
+                    }
+                }
+            ],
+            "total": 4
+        },
+        "attributes": {
+            "attribute": [
+                {
+                    "value": "A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A | A",
+                    "id": "ESTADO_OBSERVACION"
+                }
+            ],
+            "total": 1
+        },
+        "observations": "-0.97 | 2035 | -20 | -0.88 | 1012 | -9 | -1.06 | 1023 | -11 | 2.29 | 6311 | 141 | 2.88 | 3212 | 90 | 1.67 | 3099 | 51 | 1.22 | 6456 | 78 | 3.11 | 3280 | 99 | -0.66 | 3176 | -21 | 1.58 | 7130 | 111 | 1.49 | 3604 | 53 | 1.67 | 3526 | 58 | 6.22 | 717 | 42 | 7.32 | 352 | 24 | 5.19 | 365 | 18 | 5.71 | 1018 | 55 | 10.96 | 557 | 55 | 0.00 | 461 | 0 | 1.93 | 431521 | 8171 | 2.17 | 211093 | 4475 | 1.71 | 220428 | 3696 | 1.13 | 9331 | 104 | 1.84 | 4693 | 85 | 0.41 | 4638 | 19 | 3.40 | 12163 | 400 | 3.52 | 6095 | 207 | 3.29 | 6068 | 193 | 2.98 | 47777 | 1382 | 3.63 | 24062 | 843 | 2.33 | 23715 | 539 | 1.62 | 40079 | 639 | 1.54 | 20103 | 305 | 1.70 | 19976 | 334 | 2.56 | 5888 | 147 | 3.02 | 3001 | 88 | 2.09 | 2887 | 59 | 2.77 | 3900 | 105 | 4.28 | 2000 | 82 | 1.23 | 1900 | 23 | 1.94 | 12062 | 229 | 1.94 | 6051 | 115 | 1.93 | 6011 | 114 | 8.13 | 1690 | 127 | 11.94 | 872 | 93 | 4.34 | 818 | 34 | 1.39 | 18850 | 258 | 1.88 | 9481 | 175 | 0.89 | 9369 | 83 | 2.23 | 39912 | 872 | 2.71 | 20159 | 531 | 1.76 | 19753 | 341 | 1.58 | 31941 | 498 | 1.47 | 15920 | 231 | 1.69 | 16021 | 267 | 2.18 | 8387 | 179 | 3.31 | 4245 | 136 | 1.05 | 4142 | 43 | 2.12 | 3184 | 66 | 2.55 | 1569 | 39 | 1.70 | 1615 | 27 | 2.75 | 2505 | 67 | 3.72 | 1256 | 45 | 1.79 | 1249 | 22 | 1.61 | 6948 | 110 | 0.98 | 3499 | 34 | 2.25 | 3449 | 76 | 4.65 | 6215 | 276 | 4.35 | 3165 | 132 | 4.96 | 3050 | 144 | 4.21 | 12860 | 520 | 4.30 | 6520 | 269 | 4.12 | 6340 | 251 | 2.29 | 3216 | 72 | 2.27 | 1622 | 36 | 2.31 | 1594 | 36 | 1.69 | 21683 | 361 | 3.23 | 11142 | 349 | 0.11 | 10541 | 12 | 3.31 | 53717 | 1721 | 3.35 | 26990 | 876 | 3.26 | 26727 | 845 | 0.94 | 7623 | 71 | 1.14 | 3810 | 43 | 0.74 | 3813 | 28 | 4.44 | 1199 | 51 | 4.46 | 632 | 27 | 4.42 | 567 | 24 | 2.61 | 2397 | 61 | 2.49 | 1234 | 30 | 2.74 | 1163 | 31 | 1.69 | 5129 | 85 | 1.72 | 2539 | 43 | 1.65 | 2590 | 42 | 1.73 | 30419 | 517 | 1.92 | 14843 | 279 | 1.55 | 15576 | 238 | 0.12 | 4294 | 5 | -0.38 | 2100 | -8 | 0.60 | 2194 | 13 | 1.50 | 2228 | 33 | 3.06 | 1112 | 33 | 0.00 | 1116 | 0 | 1.95 | 11389 | 218 | 1.48 | 5831 | 85 | 2.45 | 5558 | 133 | 4.18 | 374 | 15 | 3.65 | 199 | 7 | 4.79 | 175 | 8 | 1.82 | 17594 | 315 | 2.00 | 8760 | 172 | 1.65 | 8834 | 143 | 2.17 | 6037 | 128 | 1.39 | 2915 | 40 | 2.90 | 3122 | 88 | 2.29 | 4469 | 100 | 2.92 | 2220 | 63 | 1.67 | 2249 | 37 | -1.03 | 2016 | -21 | -0.19 | 1029 | -2 | -1.89 | 987 | -19 | 2.21 | 4399 | 95 | 3.10 | 2192 | 66 | 1.33 | 2207 | 29 | 3.71 | 8115 | 290 | 3.72 | 4099 | 147 | 3.69 | 4016 | 143 | 2.76 | 12261 | 329 | 2.49 | 6043 | 147 | 3.02 | 6218 | 182 | 3.29 | 14630 | 466 | 3.35 | 7370 | 239 | 3.23 | 7260 | 227 | 1.89 | 1619 | 30 | 1.75 | 815 | 14 | 2.03 | 804 | 16 | -0.28 | 715 | -2 | -0.85 | 348 | -3 | 0.27 | 367 | 1 | 3.04 | 1899 | 56 | 3.48 | 952 | 32 | 2.60 | 947 | 24 | 0.98 | 13744 | 134 | 1.00 | 6787 | 67 | 0.97 | 6957 | 67 | 0.62 | 53491 | 329 | 0.76 | 26716 | 202 | 0.48 | 26775 | 127 | 0.54 | 29664 | 158 | 0.69 | 15252 | 105 | 0.37 | 14412 | 53 | 3.11 | 35654 | 1077 | 3.30 | 17963 | 574 | 2.93 | 17691 | 503 | 0.31 | 5252 | 16 | 0.39 | 2572 | 10 | 0.22 | 2680 | 6 | 0.00 | 577 | 0 | 1.29 | 313 | 4 | -1.49 | 264 | -4 | 1.33 | 7772 | 102 | 1.66 | 3919 | 64 | 1.00 | 3853 | 38 | 4.54 | 13757 | 597 | 5.03 | 7123 | 341 | 4.01 | 6634 | 256 | 3.84 | 1702 | 63 | 3.76 | 855 | 31 | 3.93 | 847 | 32 | 1.16 | 41706 | 478 | 1.66 | 21182 | 345 | 0.65 | 20524 | 133 | 1.32 | 28609 | 372 | 1.41 | 14933 | 208 | 1.21 | 13676 | 164 | 3.26 | 12887 | 407 | 3.23 | 6463 | 202 | 3.30 | 6424 | 205 | 1.25 | 5114 | 63 | 0.75 | 2536 | 19 | 1.74 | 2578 | 44 | 3.16 | 3816 | 117 | 3.10 | 1926 | 58 | 3.22 | 1890 | 59 | 4.64 | 203 | 9 | 7.63 | 127 | 9 | 0.00 | 76 | 0 | 2.80 | 7490 | 204 | 3.21 | 3663 | 114 | 2.41 | 3827 | 90 | 1.19 | 9281 | 109 | 1.79 | 4618 | 81 | 0.60 | 4663 | 28 | 1.74 | 1516 | 26 | 2.18 | 749 | 16 | 1.32 | 767 | 10 | 1.22 | 2824 | 34 | 0.65 | 1396 | 9 | 1.78 | 1428 | 25 | 3.02 | 10042 | 294 | 3.08 | 5047 | 151 | 2.95 | 4995 | 143"
+    },
+    "kind": "statisticalResources#dataset"
+}
