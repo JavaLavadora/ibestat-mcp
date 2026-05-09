@@ -1,0 +1,265 @@
+"""Parse IBESTAT eDades API responses into clean flat tables with Catalan labels.
+
+Converts the nested, multilingual, multi-dimensional API response format into
+simple lists of flat dictionaries suitable for tabular display. The MEDIDAS
+(measures) dimension is pivoted so that each measure becomes a column rather
+than a row value.
+"""
+
+from __future__ import annotations
+
+import unicodedata
+from typing import Any
+
+from ibestat_mcp.models import DimensionInfo, DimensionValue
+
+
+def strip_accents(text: str) -> str:
+    """Remove diacritics/accents from *text* for safe encoding.
+
+    Uses NFKD normalization to decompose characters, then strips combining
+    marks (category 'Mn').
+    """
+    if not text:
+        return text
+    normalized = unicodedata.normalize("NFKD", text)
+    return "".join(ch for ch in normalized if unicodedata.category(ch) != "Mn")
+
+
+def extract_localized_text(multilingual: dict | None, lang: str = "ca") -> str:
+    """Extract text for *lang* from an InternationalString.
+
+    The API structure is::
+
+        {"text": [{"value": "the text", "lang": "ca"}, ...]}
+
+    Falls back to the first available entry when the requested language is
+    not present.  Returns an empty string for ``None`` or empty input.
+    """
+    if not multilingual:
+        return ""
+    texts = multilingual.get("text")
+    if not texts:
+        return ""
+    for item in texts:
+        if item.get("lang") == lang:
+            return item["value"]
+    # Fallback: return first available
+    return texts[0]["value"]
+
+
+def parse_dimensions(metadata_response: dict) -> list[DimensionInfo]:
+    """Extract dimension info with Catalan labels from an API response.
+
+    Parameters
+    ----------
+    metadata_response:
+        A full dataset response that contains a ``metadata`` section.
+
+    Returns
+    -------
+    list[DimensionInfo]
+        One entry per dimension, with accent-stripped Catalan labels.
+    """
+    raw_dims = metadata_response["metadata"]["dimensions"]["dimension"]
+    result: list[DimensionInfo] = []
+    for dim in raw_dims:
+        dim_name = strip_accents(extract_localized_text(dim["name"]))
+        values: list[DimensionValue] = []
+        for val in dim["dimensionValues"]["value"]:
+            val_label = strip_accents(extract_localized_text(val["name"]))
+            values.append(DimensionValue(code=val["id"], label=val_label))
+        result.append(DimensionInfo(id=dim["id"], name=dim_name, values=values))
+    return result
+
+
+def _parse_observation_value(raw: str) -> int | float | None:
+    """Convert a single pipe-separated observation string to a number or None."""
+    stripped = raw.strip()
+    if not stripped:
+        return None
+    try:
+        f = float(stripped)
+    except ValueError:
+        return None
+    # Return int when the value is a whole number (e.g. "6121" -> 6121)
+    if f == int(f) and "." not in stripped:
+        return int(f)
+    return f
+
+
+def parse_observations(response: dict) -> list[dict[str, Any]]:
+    """Flatten a dataset response into a list of row dictionaries.
+
+    The MEDIDAS dimension is pivoted: its values become column names instead
+    of appearing as row values.  All column names and labels are accent-
+    stripped Catalan text.
+
+    Parameters
+    ----------
+    response:
+        A full dataset response with both ``metadata`` and ``data`` sections.
+
+    Returns
+    -------
+    list[dict[str, Any]]
+        Flat row dictionaries ready for tabular display.
+    """
+    # ------------------------------------------------------------------
+    # 1. Build label lookup from metadata
+    # ------------------------------------------------------------------
+    meta_dims = response["metadata"]["dimensions"]["dimension"]
+
+    # Map: dim_id -> {value_id -> catalan_label}
+    label_lookup: dict[str, dict[str, str]] = {}
+    # Map: dim_id -> catalan dimension name
+    dim_name_lookup: dict[str, str] = {}
+    # Identify the MEDIDAS dimension
+    medidas_dim_id: str | None = None
+
+    for dim in meta_dims:
+        dim_id = dim["id"]
+        dim_name_lookup[dim_id] = strip_accents(extract_localized_text(dim["name"]))
+        if dim.get("type") == "MEASURE_DIMENSION":
+            medidas_dim_id = dim_id
+        val_map: dict[str, str] = {}
+        for val in dim["dimensionValues"]["value"]:
+            val_map[val["id"]] = strip_accents(extract_localized_text(val["name"]))
+        label_lookup[dim_id] = val_map
+
+    # ------------------------------------------------------------------
+    # 2. Get dimension order, sizes, and code arrays from data section
+    # ------------------------------------------------------------------
+    data_dims = response["data"]["dimensions"]["dimension"]
+
+    # For each data dimension, build an ordered list of codes (by index)
+    dim_ids: list[str] = []
+    dim_codes: list[list[str]] = []  # codes ordered by their data index
+    dim_sizes: list[int] = []
+
+    for ddim in data_dims:
+        dim_id = ddim["dimensionId"]
+        dim_ids.append(dim_id)
+        reps = ddim["representations"]["representation"]
+        # Sort by index to get correct order
+        sorted_reps = sorted(reps, key=lambda r: r["index"])
+        codes = [r["code"] for r in sorted_reps]
+        dim_codes.append(codes)
+        dim_sizes.append(len(codes))
+
+    # ------------------------------------------------------------------
+    # 3. Parse observations
+    # ------------------------------------------------------------------
+    raw_obs = response["data"]["observations"]
+    obs_values = [_parse_observation_value(v) for v in raw_obs.split(" | ")]
+
+    # ------------------------------------------------------------------
+    # 4. Find MEDIDAS dimension position (if any)
+    # ------------------------------------------------------------------
+    medidas_idx: int | None = None
+    if medidas_dim_id is not None:
+        for i, did in enumerate(dim_ids):
+            if did == medidas_dim_id:
+                medidas_idx = i
+                break
+
+    # ------------------------------------------------------------------
+    # 5. Iterate all dimension combinations in row-major order
+    # ------------------------------------------------------------------
+    # We need to compute the total number of combinations and map
+    # multi-dimensional indices to the flat observation index.
+    total = 1
+    for s in dim_sizes:
+        total *= s
+
+    # Build strides for row-major indexing
+    # stride[i] = product of sizes of all dimensions after i
+    n_dims = len(dim_sizes)
+    strides = [1] * n_dims
+    for i in range(n_dims - 2, -1, -1):
+        strides[i] = strides[i + 1] * dim_sizes[i + 1]
+
+    # If MEDIDAS exists, we group by all non-MEDIDAS dimensions
+    # and collect MEDIDAS values into columns.
+    if medidas_idx is not None:
+        medidas_codes = dim_codes[medidas_idx]
+        medidas_labels = [
+            label_lookup.get(medidas_dim_id, {}).get(code, code)
+            for code in medidas_codes
+        ]
+        medidas_size = dim_sizes[medidas_idx]
+
+        # Non-MEDIDAS dimensions
+        non_medidas_indices = [i for i in range(n_dims) if i != medidas_idx]
+        non_medidas_sizes = [dim_sizes[i] for i in non_medidas_indices]
+
+        # Total rows = product of non-MEDIDAS sizes
+        total_rows = 1
+        for s in non_medidas_sizes:
+            total_rows *= s
+
+        rows: list[dict[str, Any]] = []
+        for row_flat in range(total_rows):
+            # Compute multi-index for non-MEDIDAS dimensions
+            remaining = row_flat
+            multi_idx_non_medidas: list[int] = []
+            for s in non_medidas_sizes:
+                multi_idx_non_medidas.append(remaining // (total_rows // s if s else 1))
+                # Actually, let's compute properly
+            # Recompute using proper strides for non-medidas dims
+            multi_idx_non_medidas = []
+            remaining = row_flat
+            for k, s in enumerate(non_medidas_sizes):
+                # stride for this position = product of remaining non-medidas sizes
+                stride_k = 1
+                for s2 in non_medidas_sizes[k + 1 :]:
+                    stride_k *= s2
+                idx = remaining // stride_k
+                remaining %= stride_k
+                multi_idx_non_medidas.append(idx)
+
+            # Build the row dict with dimension labels
+            row: dict[str, Any] = {}
+            for k, nm_idx in enumerate(non_medidas_indices):
+                dim_id = dim_ids[nm_idx]
+                code = dim_codes[nm_idx][multi_idx_non_medidas[k]]
+                col_name = dim_name_lookup.get(dim_id, dim_id)
+                val_label = label_lookup.get(dim_id, {}).get(code, code)
+                row[col_name] = val_label
+
+            # Now add MEDIDAS columns
+            for m_local_idx in range(medidas_size):
+                # Build full multi-index for observation lookup
+                full_idx = [0] * n_dims
+                for k, nm_pos in enumerate(non_medidas_indices):
+                    full_idx[nm_pos] = multi_idx_non_medidas[k]
+                full_idx[medidas_idx] = m_local_idx
+
+                # Compute flat index
+                flat = 0
+                for i in range(n_dims):
+                    flat += full_idx[i] * strides[i]
+
+                row[medidas_labels[m_local_idx]] = obs_values[flat]
+
+            rows.append(row)
+
+        return rows
+
+    else:
+        # No MEDIDAS dimension: each combination is a row with a single value column
+        rows = []
+        for flat_idx in range(total):
+            remaining = flat_idx
+            row = {}
+            for i in range(n_dims):
+                idx = remaining // strides[i]
+                remaining %= strides[i]
+                dim_id = dim_ids[i]
+                code = dim_codes[i][idx]
+                col_name = dim_name_lookup.get(dim_id, dim_id)
+                val_label = label_lookup.get(dim_id, {}).get(code, code)
+                row[col_name] = val_label
+            row["value"] = obs_values[flat_idx]
+            rows.append(row)
+        return rows
