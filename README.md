@@ -78,6 +78,26 @@ Data labels are returned in Catalan by default (e.g., "Territori" for Territory,
 
 Search queries work best in Catalan or Spanish since dataset names are stored in those languages. For example, use "poblacio" (not "population"), "turisme" (not "tourism"), "ocupacio" (not "employment").
 
+## Troubleshooting
+
+**Search returns no results for English terms**
+Dataset names are indexed in Catalan/Spanish. Use Catalan stems: `poblaci` (population), `turisme` (tourism), `atur` (unemployment), `habitatge` (housing). Partial matches work.
+
+**`get_data` is slow or returns too much data**
+Without filters, all observations are fetched — some datasets have hundreds of thousands of rows. Always call `get_dataset_info` first, then pass `filters` to narrow by time period, territory, etc.
+
+**"IBESTAT service is unavailable" error**
+The IBESTAT API is a public government service with no SLA. Wait a few minutes and retry. If persistent, check that `https://ibestat.es` is reachable from your network.
+
+**"Dataset not found" error**
+The dataset ID may be wrong or the dataset may have been retired. Use `search_datasets` to find the current valid ID — copy the `id` field exactly as returned.
+
+**Filter keys seem to be ignored (unfiltered data returned)**
+Filters require dimension IDs (`TIME_PERIOD`, `TERRITORIO`) and value codes (`07040`, `_T`), not human-readable labels. Use the `id` and `code` fields from `get_dataset_info`, not `name` or `label`.
+
+**Column names and values are in Catalan**
+This is expected — data labels come from the API in Catalan with accents stripped (e.g., "Territori", "Periode"). LLMs interpret these naturally. For programmatic use, `get_dataset_info` provides the full label mapping.
+
 ## Development
 
 ```bash
