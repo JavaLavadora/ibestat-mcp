@@ -46,8 +46,19 @@ def create_server() -> FastMCP:
         ),
     )
     async def search_datasets(
-        query: str,
-        limit: int = 10,
+        query: Annotated[
+            str,
+            Field(
+                description=(
+                    "Search term. Works best in Catalan or Spanish "
+                    "(e.g., 'poblacio' for population, 'turisme' for tourism)."
+                )
+            ),
+        ],
+        limit: Annotated[
+            int,
+            Field(description="Maximum number of results to return (default: 10)."),
+        ] = 10,
         language: Annotated[
             Literal["ca", "es", "en"],
             Field(
@@ -84,7 +95,15 @@ def create_server() -> FastMCP:
         ),
     )
     async def get_dataset_info(
-        dataset_id: str,
+        dataset_id: Annotated[
+            str,
+            Field(
+                description=(
+                    "Dataset identifier from search_datasets results "
+                    "(e.g., '000001A_000001')."
+                )
+            ),
+        ],
         language: Annotated[
             Literal["ca", "es", "en"],
             Field(
@@ -119,8 +138,26 @@ def create_server() -> FastMCP:
         ),
     )
     async def get_data(
-        dataset_id: str,
-        filters: dict[str, Any] | None = None,
+        dataset_id: Annotated[
+            str,
+            Field(
+                description=(
+                    "Dataset identifier from search_datasets results "
+                    "(e.g., '000001A_000001')."
+                )
+            ),
+        ],
+        filters: Annotated[
+            dict[str, Any] | None,
+            Field(
+                description=(
+                    "Optional dimension filters using codes from get_dataset_info. "
+                    "Keys are dimension IDs (e.g., 'TIME_PERIOD', 'TERRITORIO'), "
+                    "values are codes (e.g., '2024', '07040' for Palma). "
+                    "Example: {'TIME_PERIOD': '2024', 'SEXO': '_T'}"
+                )
+            ),
+        ] = None,
         language: Annotated[
             Literal["ca", "es", "en"],
             Field(
