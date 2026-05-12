@@ -21,13 +21,13 @@ This MCP server gives LLMs direct access to search, explore, and query this data
 The package is not yet published on PyPI. Install directly from GitHub:
 
 ```bash
-pip install git+https://github.com/tofermos/ibestat-mcp.git
+pip install git+https://github.com/JavaLavadora/ibestat-mcp.git
 ```
 
 Or for local development:
 
 ```bash
-git clone https://github.com/tofermos/ibestat-mcp.git
+git clone https://github.com/JavaLavadora/ibestat-mcp.git
 cd ibestat-mcp
 pip install -e ".[dev]"
 ```
@@ -48,6 +48,8 @@ Add this to your Claude Desktop configuration file (`claude_desktop_config.json`
 
 On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
+On Linux: `~/.config/Claude/claude_desktop_config.json`
+
 On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ## Quick Start
@@ -57,6 +59,8 @@ Once configured, the LLM follows a natural three-step workflow:
 1. **Search** -- "Find datasets about population" calls `search_datasets` to discover relevant datasets.
 2. **Explore** -- The LLM picks a result and calls `get_dataset_info` to see its dimensions (territory, period, sex, age group, etc.) and the values available for each.
 3. **Query** -- The LLM calls `get_data` with specific dimension filters to fetch the actual data rows.
+
+Dimension filters require the actual codes returned by `get_dataset_info`, not human-readable labels. For example, Palma is `07040`, both sexes is `_T`, and a specific year might be `2024`. This is why the explore step matters -- it reveals the codes needed for precise queries.
 
 ### Example prompts
 
@@ -71,6 +75,8 @@ Try asking your LLM:
 ## Data Language Note
 
 Data labels are returned in Catalan by default (e.g., "Territori" for Territory, "Poblacio" for Population). The LLM handles this naturally in conversation.
+
+Search queries work best in Catalan or Spanish since dataset names are stored in those languages. For example, use "poblacio" (not "population"), "turisme" (not "tourism"), "ocupacio" (not "employment").
 
 ## Development
 
