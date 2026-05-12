@@ -1,7 +1,9 @@
 """MCP tool functions that wire the IBESTAT client and parser together.
 
 Each function takes an ``IbestatClient`` as its first argument and returns
-parsed, structured data ready for MCP server responses.
+parsed, structured data ready for MCP server responses.  All functions accept
+a ``lang`` parameter to select the language for data labels (``"ca"``,
+``"es"``, or ``"en"``).
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ async def search_datasets(
     client: IbestatClient,
     query: str,
     limit: int = 10,
+    lang: str = "ca",
 ) -> list[DatasetSummary]:
     """Search for datasets by name and return deduplicated summaries.
 
@@ -26,11 +29,13 @@ async def search_datasets(
         Search term applied against dataset names.
     limit:
         Maximum number of results to return.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
 
     Returns
     -------
     list[DatasetSummary]
-        Deduplicated list of dataset summaries with Catalan names.
+        Deduplicated list of dataset summaries with localized names.
     """
     response = await client.search_datasets(query, limit)
     entries = response.get("dataset", [])
@@ -44,10 +49,10 @@ async def search_datasets(
             continue
         seen.add(ds_id)
 
-        name = extract_localized_text(entry.get("name"))
+        name = extract_localized_text(entry.get("name"), lang)
         description_field = entry.get("description")
         description_raw = (
-            extract_localized_text(description_field)
+            extract_localized_text(description_field, lang)
             if description_field is not None
             else None
         )
@@ -69,6 +74,7 @@ async def search_datasets(
 async def get_dataset_info(
     client: IbestatClient,
     dataset_id: str,
+    lang: str = "ca",
 ) -> DatasetInfo:
     """Fetch dataset metadata and return structured dimension info.
 
@@ -78,15 +84,17 @@ async def get_dataset_info(
         An initialised IBESTAT API client.
     dataset_id:
         The dataset identifier (e.g. ``"000001A_000001"``).
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
 
     Returns
     -------
     DatasetInfo
-        Dataset name (Catalan) and parsed dimension information.
+        Dataset name and parsed dimension information in the requested language.
     """
     response = await client.get_dataset_metadata(dataset_id)
-    name = extract_localized_text(response.get("name"))
-    dimensions = parse_dimensions(response)
+    name = extract_localized_text(response.get("name"), lang)
+    dimensions = parse_dimensions(response, lang)
 
     return DatasetInfo(name=name, dimensions=dimensions)
 
@@ -95,6 +103,7 @@ async def get_data(
     client: IbestatClient,
     dataset_id: str,
     filters: dict[str, str | list[str]] | None = None,
+    lang: str = "ca",
 ) -> list[DataRow]:
     """Fetch dataset observations and return flat row dictionaries.
 
@@ -106,12 +115,14 @@ async def get_data(
         The dataset identifier (e.g. ``"000001A_000001"``).
     filters:
         Optional dimension filters as ``{dim_id: value_or_values}``.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
 
     Returns
     -------
     list[DataRow]
-        Flat row dictionaries with Catalan labels, MEDIDAS pivoted into
+        Flat row dictionaries with localized labels, MEDIDAS pivoted into
         columns.
     """
     response = await client.get_dataset_data(dataset_id, filters=filters)
-    return parse_observations(response)
+    return parse_observations(response, lang)

@@ -381,3 +381,217 @@ class TestGetData:
         client.get_dataset_data.assert_awaited_once_with(
             "TEST_001", filters=None
         )
+
+
+# ===========================================================================
+# Language parameter threading tests
+# ===========================================================================
+
+
+def _intl_multilingual(ca: str, es: str, en: str = "") -> dict[str, Any]:
+    """Build an InternationalString with all three languages."""
+    texts = [{"value": ca, "lang": "ca"}, {"value": es, "lang": "es"}]
+    if en:
+        texts.append({"value": en, "lang": "en"})
+    return {"text": texts}
+
+
+def _make_multilingual_search_response() -> dict[str, Any]:
+    """Build a search response with multilingual dataset names."""
+    return {
+        "kind": "statisticalResources#datasets",
+        "dataset": [
+            {
+                "id": "DS_001",
+                "kind": "statisticalResources#dataset",
+                "name": _intl_multilingual(
+                    "Poblacio total", "Poblacion total", "Total population"
+                ),
+                "description": _intl_multilingual(
+                    "Dades de poblacio", "Datos de poblacion", "Population data"
+                ),
+                "selfLink": {
+                    "kind": "statisticalResources#dataset",
+                    "href": "https://example.com",
+                },
+                "urn": "urn:test",
+                "visualizerHtmlLink": "https://example.com/viz",
+            },
+        ],
+        "total": 1,
+        "limit": 10,
+        "offset": 0,
+        "selfLink": "https://example.com",
+        "lastLink": "https://example.com",
+    }
+
+
+def _make_multilingual_metadata_response() -> dict[str, Any]:
+    """Build a metadata response with multilingual dimension labels."""
+    return {
+        "id": "TEST_LANG",
+        "name": _intl_multilingual("Poblacio municipal", "Poblacion municipal", "Municipal population"),
+        "metadata": {
+            "dimensions": {
+                "dimension": [
+                    {
+                        "id": "TERRITORIO",
+                        "name": _intl_multilingual("Territori", "Territorio", "Reference area"),
+                        "type": "GEOGRAPHIC_DIMENSION",
+                        "dimensionValues": {
+                            "value": [
+                                {
+                                    "id": "07001",
+                                    "name": _intl_multilingual("Palma", "Palma", "Palma"),
+                                },
+                            ],
+                            "total": 1,
+                        },
+                    },
+                ]
+            },
+        },
+    }
+
+
+def _make_multilingual_data_response() -> dict[str, Any]:
+    """Build a data response with multilingual labels."""
+    return {
+        "id": "TEST_LANG",
+        "name": _intl_multilingual("Test CA", "Test ES", "Test EN"),
+        "metadata": {
+            "dimensions": {
+                "dimension": [
+                    {
+                        "id": "TERRITORIO",
+                        "name": _intl_multilingual("Territori", "Territorio", "Reference area"),
+                        "type": "GEOGRAPHIC_DIMENSION",
+                        "dimensionValues": {
+                            "value": [
+                                {
+                                    "id": "07001",
+                                    "name": _intl_multilingual("Palma", "Palma", "Palma"),
+                                },
+                            ],
+                            "total": 1,
+                        },
+                    },
+                    {
+                        "id": "MEDIDAS",
+                        "name": _intl_multilingual("Mesures", "Medidas", "Measures"),
+                        "type": "MEASURE_DIMENSION",
+                        "dimensionValues": {
+                            "value": [
+                                {
+                                    "id": "POP",
+                                    "name": _intl_multilingual("Poblacio", "Poblacion", "Population"),
+                                },
+                            ],
+                            "total": 1,
+                        },
+                    },
+                ]
+            },
+        },
+        "data": {
+            "dimensions": {
+                "dimension": [
+                    {
+                        "dimensionId": "TERRITORIO",
+                        "representations": {
+                            "representation": [{"code": "07001", "index": 0}],
+                            "total": 1,
+                        },
+                    },
+                    {
+                        "dimensionId": "MEDIDAS",
+                        "representations": {
+                            "representation": [{"code": "POP", "index": 0}],
+                            "total": 1,
+                        },
+                    },
+                ]
+            },
+            "observations": "500",
+        },
+    }
+
+
+class TestSearchDatasetsLanguage:
+    @pytest.mark.asyncio
+    async def test_spanish_labels(self) -> None:
+        """search_datasets with lang='es' returns Spanish names."""
+        client = AsyncMock()
+        client.search_datasets.return_value = _make_multilingual_search_response()
+
+        result = await search_datasets(client, "poblaci", lang="es")
+
+        assert result[0].name == "Poblacion total"
+        assert result[0].description == "Datos de poblacion"
+
+    @pytest.mark.asyncio
+    async def test_english_labels(self) -> None:
+        """search_datasets with lang='en' returns English names."""
+        client = AsyncMock()
+        client.search_datasets.return_value = _make_multilingual_search_response()
+
+        result = await search_datasets(client, "poblaci", lang="en")
+
+        assert result[0].name == "Total population"
+        assert result[0].description == "Population data"
+
+    @pytest.mark.asyncio
+    async def test_catalan_default(self) -> None:
+        """search_datasets defaults to Catalan labels."""
+        client = AsyncMock()
+        client.search_datasets.return_value = _make_multilingual_search_response()
+
+        result = await search_datasets(client, "poblaci")
+
+        assert result[0].name == "Poblacio total"
+
+
+class TestGetDatasetInfoLanguage:
+    @pytest.mark.asyncio
+    async def test_spanish_labels(self) -> None:
+        """get_dataset_info with lang='es' returns Spanish labels."""
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = _make_multilingual_metadata_response()
+
+        result = await get_dataset_info(client, "TEST_LANG", lang="es")
+
+        assert result.name == "Poblacion municipal"
+        assert result.dimensions[0].name == "Territorio"
+
+    @pytest.mark.asyncio
+    async def test_english_labels(self) -> None:
+        """get_dataset_info with lang='en' returns English labels."""
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = _make_multilingual_metadata_response()
+
+        result = await get_dataset_info(client, "TEST_LANG", lang="en")
+
+        assert result.name == "Municipal population"
+        assert result.dimensions[0].name == "Reference area"
+
+
+class TestGetDataLanguage:
+    @pytest.mark.asyncio
+    async def test_spanish_labels(self) -> None:
+        """get_data with lang='es' returns rows with Spanish column names."""
+        client = AsyncMock()
+        client.get_dataset_data.return_value = _make_multilingual_data_response()
+
+        result = await get_data(client, "TEST_LANG", lang="es")
+
+        assert result[0] == {"Territorio": "Palma", "Poblacion": 500}
+
+    @pytest.mark.asyncio
+    async def test_english_labels(self) -> None:
+        """get_data with lang='en' returns rows with English column names."""
+        client = AsyncMock()
+        client.get_dataset_data.return_value = _make_multilingual_data_response()
+
+        result = await get_data(client, "TEST_LANG", lang="en")
+
+        assert result[0] == {"Reference area": "Palma", "Population": 500}

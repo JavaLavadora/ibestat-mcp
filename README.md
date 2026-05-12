@@ -74,7 +74,13 @@ Try asking your LLM:
 
 ## Data Language Note
 
-Data labels are returned in Catalan by default (e.g., "Territori" for Territory, "Poblacio" for Population). The LLM handles this naturally in conversation.
+All three tools accept a `language` parameter that controls the language of returned data labels. Supported values:
+
+- `ca` -- Catalan (default). Labels like "Territori", "Poblacio".
+- `es` -- Spanish. Labels like "Territorio", "Poblacion".
+- `en` -- English. Labels like "Reference area", "Population".
+
+The LLM will typically pick the right language based on the user's conversation language.
 
 Search queries work best in Catalan or Spanish since dataset names are stored in those languages. For example, use "poblacio" (not "population"), "turisme" (not "tourism"), "ocupacio" (not "employment").
 

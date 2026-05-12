@@ -1,9 +1,10 @@
-"""Parse IBESTAT eDades API responses into clean flat tables with Catalan labels.
+"""Parse IBESTAT eDades API responses into clean flat tables with localized labels.
 
 Converts the nested, multilingual, multi-dimensional API response format into
 simple lists of flat dictionaries suitable for tabular display. The MEDIDAS
 (measures) dimension is pivoted so that each measure becomes a column rather
-than a row value.
+than a row value. Labels can be returned in Catalan (ca), Spanish (es), or
+English (en).
 """
 
 from __future__ import annotations
@@ -48,26 +49,30 @@ def extract_localized_text(multilingual: dict | None, lang: str = "ca") -> str:
     return texts[0]["value"]
 
 
-def parse_dimensions(metadata_response: dict) -> list[DimensionInfo]:
-    """Extract dimension info with Catalan labels from an API response.
+def parse_dimensions(
+    metadata_response: dict, lang: str = "ca"
+) -> list[DimensionInfo]:
+    """Extract dimension info with localized labels from an API response.
 
     Parameters
     ----------
     metadata_response:
         A full dataset response that contains a ``metadata`` section.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
 
     Returns
     -------
     list[DimensionInfo]
-        One entry per dimension, with accent-stripped Catalan labels.
+        One entry per dimension, with accent-stripped localized labels.
     """
     raw_dims = metadata_response["metadata"]["dimensions"]["dimension"]
     result: list[DimensionInfo] = []
     for dim in raw_dims:
-        dim_name = strip_accents(extract_localized_text(dim["name"]))
+        dim_name = strip_accents(extract_localized_text(dim["name"], lang))
         values: list[DimensionValue] = []
         for val in dim["dimensionValues"]["value"]:
-            val_label = strip_accents(extract_localized_text(val["name"]))
+            val_label = strip_accents(extract_localized_text(val["name"], lang))
             values.append(DimensionValue(code=val["id"], label=val_label))
         result.append(DimensionInfo(id=dim["id"], name=dim_name, values=values))
     return result
@@ -88,17 +93,21 @@ def _parse_observation_value(raw: str) -> int | float | None:
     return f
 
 
-def parse_observations(response: dict) -> list[dict[str, Any]]:
+def parse_observations(
+    response: dict, lang: str = "ca"
+) -> list[dict[str, Any]]:
     """Flatten a dataset response into a list of row dictionaries.
 
     The MEDIDAS dimension is pivoted: its values become column names instead
     of appearing as row values.  All column names and labels are accent-
-    stripped Catalan text.
+    stripped localized text.
 
     Parameters
     ----------
     response:
         A full dataset response with both ``metadata`` and ``data`` sections.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
 
     Returns
     -------
@@ -110,21 +119,21 @@ def parse_observations(response: dict) -> list[dict[str, Any]]:
     # ------------------------------------------------------------------
     meta_dims = response["metadata"]["dimensions"]["dimension"]
 
-    # Map: dim_id -> {value_id -> catalan_label}
+    # Map: dim_id -> {value_id -> localized_label}
     label_lookup: dict[str, dict[str, str]] = {}
-    # Map: dim_id -> catalan dimension name
+    # Map: dim_id -> localized dimension name
     dim_name_lookup: dict[str, str] = {}
     # Identify the MEDIDAS dimension
     medidas_dim_id: str | None = None
 
     for dim in meta_dims:
         dim_id = dim["id"]
-        dim_name_lookup[dim_id] = strip_accents(extract_localized_text(dim["name"]))
+        dim_name_lookup[dim_id] = strip_accents(extract_localized_text(dim["name"], lang))
         if dim.get("type") == "MEASURE_DIMENSION":
             medidas_dim_id = dim_id
         val_map: dict[str, str] = {}
         for val in dim["dimensionValues"]["value"]:
-            val_map[val["id"]] = strip_accents(extract_localized_text(val["name"]))
+            val_map[val["id"]] = strip_accents(extract_localized_text(val["name"], lang))
         label_lookup[dim_id] = val_map
 
     # ------------------------------------------------------------------

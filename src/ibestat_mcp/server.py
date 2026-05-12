@@ -15,7 +15,7 @@ Usage::
 from __future__ import annotations
 
 import json
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -39,6 +39,8 @@ def create_server() -> FastMCP:
             "Returns a list of matching datasets with their IDs, names, "
             "and links. Use this to discover available datasets before "
             "fetching details or data. "
+            "Supports Catalan (ca), Spanish (es), and English (en) labels "
+            "via the language parameter. "
             "Example: query='poblaci' finds population-related datasets. "
             "Example: query='turisme' finds tourism-related datasets."
         ),
@@ -57,12 +59,21 @@ def create_server() -> FastMCP:
             int,
             Field(description="Maximum number of results to return (default: 10)."),
         ] = 10,
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(
+                description=(
+                    "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
+                    "or 'en' (English). Default: 'ca'."
+                )
+            ),
+        ] = "ca",
     ) -> str:
         """Search IBESTAT datasets by keyword."""
         try:
             async with IbestatClient() as client:
                 results = await tool_functions.search_datasets(
-                    client, query, limit
+                    client, query, limit, lang=language
                 )
             return json.dumps(
                 [r.model_dump() for r in results], ensure_ascii=False
@@ -76,6 +87,8 @@ def create_server() -> FastMCP:
             "name and all available dimensions with their possible values. "
             "Use this after search_datasets to understand a dataset's "
             "structure before requesting data. "
+            "Supports Catalan (ca), Spanish (es), and English (en) labels "
+            "via the language parameter. "
             "Example: dataset_id='000001A_000001' returns dimensions like "
             "TERRITORIO, TIME_PERIOD, SEXO, and MEDIDAS with all their codes "
             "and labels."
@@ -91,11 +104,22 @@ def create_server() -> FastMCP:
                 )
             ),
         ],
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(
+                description=(
+                    "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
+                    "or 'en' (English). Default: 'ca'."
+                )
+            ),
+        ] = "ca",
     ) -> str:
         """Get metadata and dimensions for an IBESTAT dataset."""
         try:
             async with IbestatClient() as client:
-                info = await tool_functions.get_dataset_info(client, dataset_id)
+                info = await tool_functions.get_dataset_info(
+                    client, dataset_id, lang=language
+                )
             return json.dumps(info.model_dump(), ensure_ascii=False)
         except IbestatError as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -106,6 +130,8 @@ def create_server() -> FastMCP:
             "filtered by dimension values. Returns rows as flat JSON objects "
             "with human-readable labels. Use get_dataset_info first to "
             "discover available dimension codes for filtering. "
+            "Supports Catalan (ca), Spanish (es), and English (en) labels "
+            "via the language parameter. "
             "Example: dataset_id='000001A_000001', "
             "filters={'TIME_PERIOD': '2024', 'SEXO': '_T'} returns total "
             "population for all municipalities in 2024."
@@ -132,12 +158,21 @@ def create_server() -> FastMCP:
                 )
             ),
         ] = None,
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(
+                description=(
+                    "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
+                    "or 'en' (English). Default: 'ca'."
+                )
+            ),
+        ] = "ca",
     ) -> str:
         """Fetch observation data from an IBESTAT dataset."""
         try:
             async with IbestatClient() as client:
                 rows = await tool_functions.get_data(
-                    client, dataset_id, filters
+                    client, dataset_id, filters, lang=language
                 )
             return json.dumps(rows, ensure_ascii=False)
         except IbestatError as e:
