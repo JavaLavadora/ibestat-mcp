@@ -504,3 +504,152 @@ class TestParseObservations:
         assert rows[0]["Poblacio"] == 6121
         assert isinstance(rows[0]["Poblacio"], (int, float))
         assert rows[0]["Taxa"] == -0.97
+
+
+# ===========================================================================
+# TestLanguageSelection -- lang parameter threading
+# ===========================================================================
+
+
+def _intl_multilingual(ca: str, es: str, en: str) -> dict[str, Any]:
+    """Build an InternationalString with all three languages."""
+    return {
+        "text": [
+            {"value": en, "lang": "en"},
+            {"value": es, "lang": "es"},
+            {"value": ca, "lang": "ca"},
+        ]
+    }
+
+
+def _multilingual_meta_dimension(
+    dim_id: str,
+    name_ca: str,
+    name_es: str,
+    name_en: str,
+    values: list[dict],
+    dim_type: str = "DIMENSION",
+) -> dict:
+    """Build a metadata dimension with multilingual name."""
+    return {
+        "id": dim_id,
+        "name": _intl_multilingual(name_ca, name_es, name_en),
+        "type": dim_type,
+        "dimensionValues": {"value": values, "total": len(values)},
+    }
+
+
+def _multilingual_dim_value(
+    id_: str, name_ca: str, name_es: str, name_en: str
+) -> dict:
+    """Build a dimensionValues.value entry with multilingual names."""
+    return {"id": id_, "name": _intl_multilingual(name_ca, name_es, name_en)}
+
+
+class TestParseDimensionsLanguage:
+    """Verify parse_dimensions respects the lang parameter."""
+
+    def _build_response(self) -> dict:
+        return {
+            "metadata": {
+                "dimensions": {
+                    "dimension": [
+                        _multilingual_meta_dimension(
+                            "SEXO",
+                            "Sexe",
+                            "Sexo",
+                            "Sex",
+                            [
+                                _multilingual_dim_value(
+                                    "_T", "Ambdos sexes", "Ambos sexos", "Both sexes"
+                                ),
+                                _multilingual_dim_value(
+                                    "M", "Homes", "Hombres", "Males"
+                                ),
+                            ],
+                        ),
+                    ],
+                    "total": 1,
+                },
+            },
+        }
+
+    def test_catalan_default(self):
+        dims = parse_dimensions(self._build_response())
+        assert dims[0].name == "Sexe"
+        assert dims[0].values[0].label == "Ambdos sexes"
+
+    def test_spanish(self):
+        dims = parse_dimensions(self._build_response(), lang="es")
+        assert dims[0].name == "Sexo"
+        assert dims[0].values[0].label == "Ambos sexos"
+        assert dims[0].values[1].label == "Hombres"
+
+    def test_english(self):
+        dims = parse_dimensions(self._build_response(), lang="en")
+        assert dims[0].name == "Sex"
+        assert dims[0].values[0].label == "Both sexes"
+        assert dims[0].values[1].label == "Males"
+
+
+class TestParseObservationsLanguage:
+    """Verify parse_observations respects the lang parameter."""
+
+    def _build_response(self) -> dict:
+        return {
+            "id": "TEST_LANG",
+            "name": _intl_multilingual("Test CA", "Test ES", "Test EN"),
+            "metadata": {
+                "dimensions": {
+                    "dimension": [
+                        _multilingual_meta_dimension(
+                            "TERRITORIO",
+                            "Territori",
+                            "Territorio",
+                            "Reference area",
+                            [
+                                _multilingual_dim_value(
+                                    "07001", "Alaro", "Alaro", "Alaro"
+                                ),
+                            ],
+                            dim_type="GEOGRAPHIC_DIMENSION",
+                        ),
+                        _multilingual_meta_dimension(
+                            "MEDIDAS",
+                            "Indicador",
+                            "Indicador",
+                            "Indicator",
+                            [
+                                _multilingual_dim_value(
+                                    "POP", "Poblacio", "Poblacion", "Population"
+                                ),
+                            ],
+                            dim_type="MEASURE_DIMENSION",
+                        ),
+                    ],
+                    "total": 2,
+                },
+            },
+            "data": {
+                "dimensions": {
+                    "dimension": [
+                        _data_dimension("TERRITORIO", ["07001"]),
+                        _data_dimension("MEDIDAS", ["POP"]),
+                    ],
+                    "total": 2,
+                },
+                "observations": "100",
+            },
+        }
+
+    def test_catalan_default(self):
+        rows = parse_observations(self._build_response())
+        assert rows[0] == {"Territori": "Alaro", "Poblacio": 100}
+
+    def test_spanish(self):
+        rows = parse_observations(self._build_response(), lang="es")
+        assert rows[0] == {"Territorio": "Alaro", "Poblacion": 100}
+
+    def test_english(self):
+        rows = parse_observations(self._build_response(), lang="en")
+        assert rows[0] == {"Reference area": "Alaro", "Population": 100}

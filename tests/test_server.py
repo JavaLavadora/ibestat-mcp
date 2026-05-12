@@ -138,3 +138,88 @@ async def test_tool_returns_error_text_on_ibestat_error():
 
     text = _extract_text(result)
     assert "Dataset not found" in text
+
+
+# ===========================================================================
+# Language parameter tests
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_tools_expose_language_parameter():
+    """All three tools should include a 'language' parameter."""
+    server = create_server()
+    tools = await server.list_tools()
+    for tool in tools:
+        param_names = list(tool.inputSchema.get("properties", {}).keys())
+        assert "language" in param_names, (
+            f"Tool '{tool.name}' is missing the 'language' parameter"
+        )
+
+
+@pytest.mark.asyncio
+async def test_search_datasets_passes_language(search_datasets_response):
+    """search_datasets tool should forward language to tool_functions."""
+    server = create_server()
+
+    mock_client = AsyncMock()
+    mock_client.search_datasets = AsyncMock(return_value=search_datasets_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.search_datasets = AsyncMock(return_value=[])
+            await server.call_tool(
+                "search_datasets", {"query": "test", "language": "es"}
+            )
+            mock_tools.search_datasets.assert_awaited_once()
+            call_kwargs = mock_tools.search_datasets.call_args
+            assert call_kwargs.kwargs.get("lang") == "es" or (
+                len(call_kwargs.args) >= 4 and call_kwargs.args[3] == "es"
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_dataset_info_passes_language(dataset_metadata_response):
+    """get_dataset_info tool should forward language to tool_functions."""
+    server = create_server()
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            from ibestat_mcp.models import DatasetInfo
+            mock_tools.get_dataset_info = AsyncMock(
+                return_value=DatasetInfo(name="Test", dimensions=[])
+            )
+            await server.call_tool(
+                "get_dataset_info",
+                {"dataset_id": "000001A_000001", "language": "en"},
+            )
+            mock_tools.get_dataset_info.assert_awaited_once()
+            call_kwargs = mock_tools.get_dataset_info.call_args
+            assert call_kwargs.kwargs.get("lang") == "en"
+
+
+@pytest.mark.asyncio
+async def test_get_data_passes_language(dataset_metadata_response):
+    """get_data tool should forward language to tool_functions."""
+    server = create_server()
+
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.get_data = AsyncMock(return_value=[])
+            await server.call_tool(
+                "get_data",
+                {"dataset_id": "000001A_000001", "language": "es"},
+            )
+            mock_tools.get_data.assert_awaited_once()
+            call_kwargs = mock_tools.get_data.call_args
+            assert call_kwargs.kwargs.get("lang") == "es"
