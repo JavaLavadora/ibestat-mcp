@@ -119,9 +119,9 @@ def parse_observations(
     # ------------------------------------------------------------------
     meta_dims = response["metadata"]["dimensions"]["dimension"]
 
-    # Map: dim_id -> {value_id -> catalan_label}
+    # Map: dim_id -> {value_id -> localized_label}
     label_lookup: dict[str, dict[str, str]] = {}
-    # Map: dim_id -> catalan dimension name
+    # Map: dim_id -> localized dimension name
     dim_name_lookup: dict[str, str] = {}
     # Identify the MEDIDAS dimension
     medidas_dim_id: str | None = None

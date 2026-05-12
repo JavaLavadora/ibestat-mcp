@@ -15,7 +15,7 @@ Usage::
 from __future__ import annotations
 
 import json
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import Field
@@ -49,7 +49,7 @@ def create_server() -> FastMCP:
         query: str,
         limit: int = 10,
         language: Annotated[
-            str,
+            Literal["ca", "es", "en"],
             Field(
                 description=(
                     "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
@@ -86,7 +86,7 @@ def create_server() -> FastMCP:
     async def get_dataset_info(
         dataset_id: str,
         language: Annotated[
-            str,
+            Literal["ca", "es", "en"],
             Field(
                 description=(
                     "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
@@ -122,7 +122,7 @@ def create_server() -> FastMCP:
         dataset_id: str,
         filters: dict[str, Any] | None = None,
         language: Annotated[
-            str,
+            Literal["ca", "es", "en"],
             Field(
                 description=(
                     "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
