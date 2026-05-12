@@ -15,9 +15,10 @@ Usage::
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 from ibestat_mcp.client import IbestatClient, IbestatError
 from ibestat_mcp import tools as tool_functions
@@ -42,7 +43,21 @@ def create_server() -> FastMCP:
             "Example: query='turisme' finds tourism-related datasets."
         ),
     )
-    async def search_datasets(query: str, limit: int = 10) -> str:
+    async def search_datasets(
+        query: Annotated[
+            str,
+            Field(
+                description=(
+                    "Search term. Works best in Catalan or Spanish "
+                    "(e.g., 'poblacio' for population, 'turisme' for tourism)."
+                )
+            ),
+        ],
+        limit: Annotated[
+            int,
+            Field(description="Maximum number of results to return (default: 10)."),
+        ] = 10,
+    ) -> str:
         """Search IBESTAT datasets by keyword."""
         try:
             async with IbestatClient() as client:
@@ -66,7 +81,17 @@ def create_server() -> FastMCP:
             "and labels."
         ),
     )
-    async def get_dataset_info(dataset_id: str) -> str:
+    async def get_dataset_info(
+        dataset_id: Annotated[
+            str,
+            Field(
+                description=(
+                    "Dataset identifier from search_datasets results "
+                    "(e.g., '000001A_000001')."
+                )
+            ),
+        ],
+    ) -> str:
         """Get metadata and dimensions for an IBESTAT dataset."""
         try:
             async with IbestatClient() as client:
@@ -87,8 +112,26 @@ def create_server() -> FastMCP:
         ),
     )
     async def get_data(
-        dataset_id: str,
-        filters: dict[str, Any] | None = None,
+        dataset_id: Annotated[
+            str,
+            Field(
+                description=(
+                    "Dataset identifier from search_datasets results "
+                    "(e.g., '000001A_000001')."
+                )
+            ),
+        ],
+        filters: Annotated[
+            dict[str, Any] | None,
+            Field(
+                description=(
+                    "Optional dimension filters using codes from get_dataset_info. "
+                    "Keys are dimension IDs (e.g., 'TIME_PERIOD', 'TERRITORIO'), "
+                    "values are codes (e.g., '2024', '07040' for Palma). "
+                    "Example: {'TIME_PERIOD': '2024', 'SEXO': '_T'}"
+                )
+            ),
+        ] = None,
     ) -> str:
         """Fetch observation data from an IBESTAT dataset."""
         try:
