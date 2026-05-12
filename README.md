@@ -95,8 +95,8 @@ The dataset ID may be wrong or the dataset may have been retired. Use `search_da
 **Filter keys seem to be ignored (unfiltered data returned)**
 Filters require dimension IDs (`TIME_PERIOD`, `TERRITORIO`) and value codes (`07040`, `_T`), not human-readable labels. Use the `id` and `code` fields from `get_dataset_info`, not `name` or `label`.
 
-**Column names and values are in Catalan**
-This is expected — data labels come from the API in Catalan with accents stripped (e.g., "Territori", "Periode"). LLMs interpret these naturally. For programmatic use, `get_dataset_info` provides the full label mapping.
+**Column names and values are not in English**
+The server currently returns labels in Catalan by default (e.g., "Territori", "Periode"). The IBESTAT API also provides Spanish and English labels — language selection is planned for a future release. LLMs interpret these labels naturally in conversation.
 
 ## Development
 
