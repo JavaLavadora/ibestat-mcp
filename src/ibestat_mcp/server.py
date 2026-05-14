@@ -1,6 +1,6 @@
 """MCP server for the IBESTAT eDades statistical-resources API.
 
-Registers five tools and exposes them via stdio transport.
+Registers six tools and exposes them via stdio transport.
 
 Usage::
 
@@ -235,6 +235,51 @@ def create_server() -> FastMCP:
             async with IbestatClient() as client:
                 result = await tool_functions.get_codelist(
                     client, codelist_id, limit=limit, offset=offset, lang=language
+                )
+            return json.dumps(result.model_dump(), ensure_ascii=False)
+        except IbestatError as e:
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool(
+        description=(
+            "List all datasets under an IBESTAT thematic category. Use this "
+            "after browse_topics to see exactly what datasets exist for a "
+            "category — no keyword guessing needed. Takes a category_id from "
+            "browse_topics and returns all datasets found. "
+            "For parent categories (e.g., '010' Demographics), all child "
+            "categories are queried automatically. "
+            "IMPORTANT: The first call for a category fetches data from "
+            "multiple API endpoints and may take a few seconds. The result "
+            "is cached, so subsequent calls for the same category are instant. "
+            "Supports Catalan (ca), Spanish (es), and English (en) labels."
+        ),
+    )
+    async def list_datasets_by_topic(
+        category_id: Annotated[
+            str,
+            Field(
+                description=(
+                    "Category ID from browse_topics results "
+                    "(e.g., '010_010' for Population, '010' for Demographics). "
+                    "Parent categories automatically include all child categories."
+                )
+            ),
+        ],
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(
+                description=(
+                    "Language for data labels: 'ca' (Catalan), 'es' (Spanish), "
+                    "or 'en' (English). Default: 'ca'."
+                )
+            ),
+        ] = "ca",
+    ) -> str:
+        """List all datasets under an IBESTAT thematic category."""
+        try:
+            async with IbestatClient() as client:
+                result = await tool_functions.list_datasets_by_topic(
+                    client, category_id, lang=language
                 )
             return json.dumps(result.model_dump(), ensure_ascii=False)
         except IbestatError as e:
