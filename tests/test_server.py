@@ -42,12 +42,15 @@ def test_server_has_expected_name():
 
 
 @pytest.mark.asyncio
-async def test_server_has_five_tools():
-    """The server should register exactly five tools."""
+async def test_server_has_six_tools():
+    """The server should register exactly six tools."""
     server = create_server()
     tools = await server.list_tools()
     tool_names = {t.name for t in tools}
-    assert tool_names == {"search_datasets", "get_dataset_info", "get_data", "browse_topics", "get_codelist"}
+    assert tool_names == {
+        "search_datasets", "get_dataset_info", "get_data",
+        "browse_topics", "get_codelist", "list_datasets_by_topic",
+    }
 
 
 @pytest.mark.asyncio
@@ -305,3 +308,71 @@ async def test_get_codelist_tool_calls_client():
     data = json.loads(text)
     assert data["id"] == "CL_AREA_ES53"
     assert len(data["codes"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_datasets_by_topic_tool_registered():
+    """list_datasets_by_topic tool should be registered."""
+    server = create_server()
+    tool_names = [t.name for t in await server.list_tools()]
+    assert "list_datasets_by_topic" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_list_datasets_by_topic_tool_calls_client():
+    """list_datasets_by_topic tool should create a client and return JSON text."""
+    from ibestat_mcp.models import TopicDatasets, DatasetSummary
+
+    server = create_server()
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.list_datasets_by_topic = AsyncMock(
+                return_value=TopicDatasets(
+                    category_id="010_010",
+                    category_name="Poblacio",
+                    datasets=[DatasetSummary(id="DS1", name="Test", description=None, link="")],
+                    total=1,
+                    note="Cached.",
+                )
+            )
+            result = await server.call_tool(
+                "list_datasets_by_topic", {"category_id": "010_010"}
+            )
+
+    text = _extract_text(result)
+    data = json.loads(text)
+    assert data["category_id"] == "010_010"
+    assert len(data["datasets"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_datasets_by_topic_passes_language():
+    """list_datasets_by_topic should forward language to tool_functions."""
+    from ibestat_mcp.models import TopicDatasets
+
+    server = create_server()
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.list_datasets_by_topic = AsyncMock(
+                return_value=TopicDatasets(
+                    category_id="010_010",
+                    category_name="Poblacion",
+                    datasets=[],
+                    total=0,
+                    note="Cached.",
+                )
+            )
+            await server.call_tool(
+                "list_datasets_by_topic",
+                {"category_id": "010_010", "language": "es"},
+            )
+            call_kwargs = mock_tools.list_datasets_by_topic.call_args
+            assert call_kwargs.kwargs.get("lang") == "es"

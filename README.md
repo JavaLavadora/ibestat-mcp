@@ -13,6 +13,7 @@ This MCP server gives LLMs direct access to search, explore, and query this data
 | Tool | Description |
 |------|-------------|
 | `browse_topics` | Browse IBESTAT's thematic catalog (Demographics, Economy, Tourism, Labour...) |
+| `list_datasets_by_topic` | List all datasets under a category — no keyword guessing needed |
 | `search_datasets` | Search datasets by keyword (e.g., "poblacio", "turisme") |
 | `get_dataset_info` | Get dataset dimensions, filter values, and linked codelist IDs |
 | `get_codelist` | Explore a codelist's hierarchical codes (e.g., Region > Island > Municipality) |
@@ -56,13 +57,14 @@ On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ## Quick Start
 
-Once configured, the LLM follows a five-step workflow:
+Once configured, the LLM follows a six-step workflow:
 
-1. **Browse topics** -- `browse_topics` shows IBESTAT's full thematic catalog so the LLM knows what vocabulary to use.
-2. **Search** -- `search_datasets` finds datasets using terms from the topic tree (e.g., "turisme", "mercat laboral").
-3. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist. `codelist_id` allows to gather context for the dimension using the APIs internal semantic conventions.
-4. **Explore codelists** -- `get_codelist` with the `codelist_id` shows the full hierarchy (e.g., Illes Balears > Mallorca > Palma) so the LLM can discover valid filter values at any level.
-5. **Query** -- `get_data` fetches rows using the known-valid filter codes.
+1. **Browse topics** -- `browse_topics` shows IBESTAT's full thematic catalog so the LLM knows what domains exist.
+2. **List datasets** -- `list_datasets_by_topic` shows all datasets under a chosen category. First call may take a few seconds (multiple API endpoints are queried and cached); subsequent calls are instant.
+3. **Search** -- *(Alternative)* `search_datasets` finds datasets via free-text keyword search when you already know what to look for.
+4. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist. `codelist_id` allows to gather context for the dimension using the APIs internal semantic conventions.
+5. **Explore codelists** -- `get_codelist` with the `codelist_id` shows the full hierarchy (e.g., Illes Balears > Mallorca > Palma) so the LLM can discover valid filter values at any level.
+6. **Query** -- `get_data` fetches rows using the known-valid filter codes.
 
 Dimension filters require the actual codes returned by `get_dataset_info` or `get_codelist`, not human-readable labels. For example, Palma is `07040`, both sexes is `_T`, and a specific year might be `2024`. Steps 3-4 reveal the codes needed for precise queries.
 

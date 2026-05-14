@@ -261,6 +261,28 @@ def data_structure_response() -> dict[str, Any]:
 
 
 @pytest.fixture()
+def operations_response() -> dict[str, Any]:
+    """Operations for a category from the IBESTAT operations API.
+
+    Endpoint: GET /operations?query=SUBJECT_AREA_URN EQ "..."&_type=json
+
+    Contains 2 statistical operations.
+    """
+    return _load_fixture("operations_response.json")
+
+
+@pytest.fixture()
+def datasets_by_operation_response() -> dict[str, Any]:
+    """Datasets for an operation from the IBESTAT statistical-resources API.
+
+    Endpoint: GET /datasets?query=STATISTICAL_OPERATION_URN EQ "..."&_type=json
+
+    Contains 2 datasets belonging to one operation.
+    """
+    return _load_fixture("datasets_by_operation_response.json")
+
+
+@pytest.fixture()
 def dataset_data_response() -> dict[str, Any]:
     """Filtered dataset response (data only, no metadata section).
 

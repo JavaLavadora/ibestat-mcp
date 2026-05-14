@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ibestat_mcp.models import CodelistResult, TopicTree
+from ibestat_mcp.models import CodelistResult, TopicDatasets, TopicTree
 
 
 class SemanticCache:
@@ -20,6 +20,7 @@ class SemanticCache:
         self._topics: dict[str, TopicTree] = {}
         self._dsd_maps: dict[str, dict[str, str]] = {}
         self._codelists: dict[tuple[str, int, int, str], CodelistResult] = {}
+        self._topic_datasets: dict[tuple[str, str], TopicDatasets] = {}
 
     def get_topics(self, lang: str) -> TopicTree | None:
         return self._topics.get(lang)
@@ -42,6 +43,12 @@ class SemanticCache:
         self, codelist_id: str, limit: int, offset: int, lang: str, result: CodelistResult
     ) -> None:
         self._codelists[(codelist_id, limit, offset, lang)] = result
+
+    def get_topic_datasets(self, category_id: str, lang: str) -> TopicDatasets | None:
+        return self._topic_datasets.get((category_id, lang))
+
+    def set_topic_datasets(self, category_id: str, lang: str, result: TopicDatasets) -> None:
+        self._topic_datasets[(category_id, lang)] = result
 
 
 cache = SemanticCache()

@@ -48,6 +48,7 @@ def parse_categories(response: dict[str, Any], lang: str = "ca") -> list[Categor
             id=entry["id"],
             name=strip_accents(extract_localized_text(entry.get("name"), lang)),
             parent_id=parent_id,
+            nested_id=entry.get("nestedId"),
         ))
     return results
 

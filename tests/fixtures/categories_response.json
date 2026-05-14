@@ -4,6 +4,7 @@
   "category": [
     {
       "id": "010",
+      "nestedId": "010",
       "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).010",
       "name": {
         "text": [
@@ -15,6 +16,7 @@
     },
     {
       "id": "010_010",
+      "nestedId": "010.010_010",
       "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).010.010_010",
       "name": {
         "text": [
@@ -27,6 +29,7 @@
     },
     {
       "id": "020",
+      "nestedId": "020",
       "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).020",
       "name": {
         "text": [
@@ -38,6 +41,7 @@
     },
     {
       "id": "020_010",
+      "nestedId": "020.020_010",
       "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).020.020_010",
       "name": {
         "text": [

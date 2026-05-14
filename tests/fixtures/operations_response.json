@@ -1,0 +1,38 @@
+{
+  "kind": "operations",
+  "total": 2,
+  "offset": 0,
+  "limit": 25,
+  "operation": [
+    {
+      "id": "000001A",
+      "kind": "statisticalOperations#operation",
+      "name": {
+        "text": [
+          {"value": "Estadistica de poblacio", "lang": "ca"},
+          {"value": "Estadistica de poblacion", "lang": "es"}
+        ]
+      },
+      "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticaloperations.Operation=000001A",
+      "selfLink": {
+        "kind": "statisticalOperations#operation",
+        "href": "https://ibestat.es/edatos/apis/operations/v1.0/operations/000001A"
+      }
+    },
+    {
+      "id": "000002B",
+      "kind": "statisticalOperations#operation",
+      "name": {
+        "text": [
+          {"value": "Cens de poblacio", "lang": "ca"},
+          {"value": "Censo de poblacion", "lang": "es"}
+        ]
+      },
+      "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticaloperations.Operation=000002B",
+      "selfLink": {
+        "kind": "statisticalOperations#operation",
+        "href": "https://ibestat.es/edatos/apis/operations/v1.0/operations/000002B"
+      }
+    }
+  ]
+}

@@ -73,16 +73,18 @@ Structural data (topics, codelists, DSDs) is cached in memory for the server ses
 ### Recommended tool workflow
 
 1. **`browse_topics`** -- See all statistical domains IBESTAT covers (cached after first call)
-2. **`search_datasets`** -- Find datasets using vocabulary from step 1
-3. **`get_dataset_info`** -- Inspect dataset dimensions; each dimension includes a `codelist_id` if a hierarchical codelist exists
-4. **`get_codelist`** -- Use the `codelist_id` to explore valid filter values at all hierarchy levels (e.g., region > island > municipality)
-5. **`get_data`** -- Query with valid filters discovered in step 4
+2. **`list_datasets_by_topic`** -- List all datasets under a chosen category. First call fetches from multiple API endpoints and may take a few seconds; result is cached for instant subsequent calls.
+3. **`search_datasets`** -- (Alternative) Free-text keyword search when you already know what to look for
+4. **`get_dataset_info`** -- Inspect dataset dimensions; each dimension includes a `codelist_id` if a hierarchical codelist exists
+5. **`get_codelist`** -- Use the `codelist_id` to explore valid filter values at all hierarchy levels (e.g., region > island > municipality)
+6. **`get_data`** -- Query with valid filters discovered in step 5
 
 ### Tool inventory
 
 | Tool | Purpose | Cached |
 |------|---------|--------|
 | `browse_topics` | Thematic topic tree (52 categories) | Yes -- fetched once per session |
+| `list_datasets_by_topic` | All datasets under a category | Yes -- per category, first call may take a few seconds |
 | `search_datasets` | Keyword search for datasets | No |
 | `get_dataset_info` | Dataset dimensions + codelist references | DSD mapping cached per dataset |
 | `get_codelist` | Hierarchical codes for a codelist | Yes -- per codelist |

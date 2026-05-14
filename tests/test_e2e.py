@@ -13,7 +13,7 @@ import pytest
 
 from ibestat_mcp.cache import SemanticCache
 from ibestat_mcp.client import IbestatClient
-from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, search_datasets
+from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, list_datasets_by_topic, search_datasets
 
 
 @pytest.mark.e2e
@@ -92,3 +92,41 @@ class TestGetDatasetInfoCodelistIdE2E:
         territorio = next((d for d in result.dimensions if d.id == "TERRITORIO"), None)
         assert territorio is not None
         assert territorio.codelist_id is not None
+
+
+@pytest.mark.e2e
+class TestListDatasetsByTopicE2E:
+    @pytest.mark.asyncio
+    async def test_returns_datasets_for_population_category(self) -> None:
+        async with IbestatClient() as client:
+            result = await list_datasets_by_topic(
+                client, "010_010", lang="es", _cache=SemanticCache()
+            )
+        assert result.total > 0
+        assert len(result.datasets) > 0
+        assert result.category_id == "010_010"
+        assert all(d.id for d in result.datasets)
+        assert all(d.name for d in result.datasets)
+
+    @pytest.mark.asyncio
+    async def test_parent_category_aggregates_children(self) -> None:
+        cache = SemanticCache()
+        async with IbestatClient() as client:
+            result = await list_datasets_by_topic(
+                client, "010", lang="es", _cache=cache
+            )
+        assert result.total > 0
+        assert result.category_name
+
+    @pytest.mark.asyncio
+    async def test_caching_works(self) -> None:
+        cache = SemanticCache()
+        async with IbestatClient() as client:
+            result1 = await list_datasets_by_topic(
+                client, "010_010", lang="ca", _cache=cache
+            )
+            result2 = await list_datasets_by_topic(
+                client, "010_010", lang="ca", _cache=cache
+            )
+        assert result1.total == result2.total
+        assert result1.datasets == result2.datasets

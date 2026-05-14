@@ -49,6 +49,11 @@ class Category(BaseModel):
     parent_id: str | None = Field(
         default=None, description="Parent category ID, None for top-level"
     )
+    nested_id: str | None = Field(
+        default=None,
+        exclude=True,
+        description="SDMX nested ID for URN construction (e.g., '010.010_010')",
+    )
 
 
 class TopicTree(BaseModel):
@@ -71,3 +76,15 @@ class CodelistResult(BaseModel):
     name: str = Field(description="Codelist name in the requested language")
     total: int = Field(description="Total number of codes in the full codelist")
     codes: list[CodelistEntry] = Field(description="Code entries (may be paginated)")
+
+
+class TopicDatasets(BaseModel):
+    category_id: str = Field(description="The category ID that was queried")
+    category_name: str = Field(description="Category name in the requested language")
+    datasets: list[DatasetSummary] = Field(
+        description="All datasets under this category"
+    )
+    total: int = Field(description="Total number of datasets found")
+    note: str = Field(
+        description="Caching and performance note for the user"
+    )

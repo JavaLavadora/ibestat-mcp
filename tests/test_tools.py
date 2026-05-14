@@ -8,8 +8,8 @@ from unittest.mock import AsyncMock
 import pytest
 
 from ibestat_mcp.cache import SemanticCache
-from ibestat_mcp.models import CodelistResult, DatasetInfo, DatasetSummary, TopicTree
-from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, search_datasets
+from ibestat_mcp.models import CodelistResult, DatasetInfo, DatasetSummary, TopicDatasets, TopicTree
+from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, list_datasets_by_topic, search_datasets
 
 
 # ---------------------------------------------------------------------------
@@ -758,3 +758,160 @@ class TestGetDatasetInfoCodelistId:
 
         assert len(result.dimensions) > 0
         assert all(d.codelist_id is None for d in result.dimensions)
+
+
+# ===========================================================================
+# TestListDatasetsByTopic
+# ===========================================================================
+
+
+class TestListDatasetsByTopic:
+    def _make_topic_tree(self) -> TopicTree:
+        from ibestat_mcp.models import Category
+        return TopicTree(
+            name="TEMAS_BALEARS",
+            categories=[
+                Category(id="010", name="Demografia", parent_id=None, nested_id="010"),
+                Category(id="010_010", name="Poblacio", parent_id="010", nested_id="010.010_010"),
+                Category(id="010_020", name="Natalitat", parent_id="010", nested_id="010.010_020"),
+                Category(id="020", name="Economia", parent_id=None, nested_id="020"),
+                Category(id="020_010", name="Mercat de treball", parent_id="020", nested_id="020.020_010"),
+            ],
+        )
+
+    def _make_operations_response(self, op_ids: list[str]) -> dict[str, Any]:
+        return {
+            "operation": [
+                {
+                    "id": op_id,
+                    "urn": f"urn:siemac:org.siemac.metamac.infomodel.statisticaloperations.Operation={op_id}",
+                }
+                for op_id in op_ids
+            ],
+            "total": len(op_ids),
+        }
+
+    def _make_datasets_response(self, datasets: list[tuple[str, str]]) -> dict[str, Any]:
+        return {
+            "dataset": [
+                {
+                    "id": ds_id,
+                    "name": {"text": [{"value": name, "lang": "ca"}]},
+                    "visualizerHtmlLink": f"https://ibestat.es/viz/{ds_id}",
+                }
+                for ds_id, name in datasets
+            ],
+            "total": len(datasets),
+        }
+
+    @pytest.mark.asyncio
+    async def test_returns_datasets_for_leaf_category(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response(["OP1"])
+        client.get_datasets_by_operation.return_value = self._make_datasets_response([
+            ("DS1", "Dataset uno"),
+            ("DS2", "Dataset dos"),
+        ])
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        result = await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+
+        assert isinstance(result, TopicDatasets)
+        assert result.category_id == "010_010"
+        assert result.total == 2
+        assert result.datasets[0].id == "DS1"
+        assert result.datasets[1].id == "DS2"
+
+    @pytest.mark.asyncio
+    async def test_parent_category_queries_all_children(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response(["OP1"])
+        client.get_datasets_by_operation.return_value = self._make_datasets_response([
+            ("DS1", "Dataset uno"),
+        ])
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        result = await list_datasets_by_topic(client, "010", lang="ca", _cache=test_cache)
+
+        assert client.get_operations_by_subject.call_count == 2
+        call_args = [c.args[0] for c in client.get_operations_by_subject.call_args_list]
+        assert "010.010_010" in call_args
+        assert "010.010_020" in call_args
+
+    @pytest.mark.asyncio
+    async def test_deduplicates_datasets(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response(["OP1", "OP2"])
+        client.get_datasets_by_operation.side_effect = [
+            self._make_datasets_response([("DS1", "Dataset uno")]),
+            self._make_datasets_response([("DS1", "Dataset uno"), ("DS2", "Dataset dos")]),
+        ]
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        result = await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+
+        assert result.total == 2
+        ids = [d.id for d in result.datasets]
+        assert ids == ["DS1", "DS2"]
+
+    @pytest.mark.asyncio
+    async def test_uses_cache_on_second_call(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response(["OP1"])
+        client.get_datasets_by_operation.return_value = self._make_datasets_response([
+            ("DS1", "Dataset uno"),
+        ])
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+        await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+
+        assert client.get_operations_by_subject.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_category_not_found_raises(self) -> None:
+        from ibestat_mcp.client import IbestatError
+
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        with pytest.raises(IbestatError, match="Category 'INVALID' not found"):
+            await list_datasets_by_topic(client, "INVALID", lang="ca", _cache=test_cache)
+
+    @pytest.mark.asyncio
+    async def test_empty_operations_returns_empty(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response([])
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        result = await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+
+        assert result.total == 0
+        assert result.datasets == []
+
+    @pytest.mark.asyncio
+    async def test_note_field_present(self) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = {"category": []}
+        client.get_operations_by_subject.return_value = self._make_operations_response(["OP1"])
+        client.get_datasets_by_operation.return_value = self._make_datasets_response([
+            ("DS1", "Dataset uno"),
+        ])
+        test_cache = SemanticCache()
+        test_cache.set_topics("ca", self._make_topic_tree())
+
+        result = await list_datasets_by_topic(client, "010_010", lang="ca", _cache=test_cache)
+
+        assert "cache" in result.note.lower() or "first call" in result.note.lower()

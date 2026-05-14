@@ -1,0 +1,40 @@
+{
+  "kind": "statisticalResources#datasets",
+  "total": 2,
+  "offset": 0,
+  "limit": 25,
+  "dataset": [
+    {
+      "id": "000001A_000001",
+      "kind": "statisticalResources#dataset",
+      "name": {
+        "text": [
+          {"value": "Poblacio municipal empadronada", "lang": "ca"},
+          {"value": "Poblacion municipal empadronada", "lang": "es"}
+        ]
+      },
+      "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000001A_000001(1.0)",
+      "selfLink": {
+        "kind": "statisticalResources#dataset",
+        "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000001A_000001/1.0"
+      },
+      "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000001A_000001&version=1.0"
+    },
+    {
+      "id": "000001A_000002",
+      "kind": "statisticalResources#dataset",
+      "name": {
+        "text": [
+          {"value": "Poblacio per edat i sexe", "lang": "ca"},
+          {"value": "Poblacion por edad y sexo", "lang": "es"}
+        ]
+      },
+      "urn": "urn:siemac:org.siemac.metamac.infomodel.statisticalresources.Dataset=IBESTAT:000001A_000002(1.0)",
+      "selfLink": {
+        "kind": "statisticalResources#dataset",
+        "href": "https://ibestat.es/edatos/apis/statistical-resources/v1.0/datasets/IBESTAT/000001A_000002/1.0"
+      },
+      "visualizerHtmlLink": "https://ibestat.es/edatos/apps/statistical-visualizer/visualizer/data.html?resourceType=dataset&agencyId=IBESTAT&resourceId=000001A_000002&version=1.0"
+    }
+  ]
+}
