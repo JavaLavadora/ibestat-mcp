@@ -8,6 +8,8 @@ a ``lang`` parameter to select the language for data labels (``"ca"``,
 
 from __future__ import annotations
 
+import logging
+
 from ibestat_mcp.cache import SemanticCache, cache as _default_cache
 from ibestat_mcp.client import IbestatClient
 from ibestat_mcp.models import CodelistResult, DataRow, DatasetInfo, DatasetSummary, TopicTree
@@ -17,6 +19,8 @@ from ibestat_mcp.structural_parser import (
     parse_categories,
     parse_codelist_codes,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def search_datasets(
@@ -117,6 +121,7 @@ async def get_dataset_info(
                 codelist_map = extract_codelist_ids_from_dsd(dsd_response)
                 c.set_dsd_codelist_map(dataset_id, codelist_map)
         except Exception:
+            logger.debug("DSD lookup failed for %s", dataset_id, exc_info=True)
             codelist_map = {}
 
     if codelist_map is None:
@@ -182,12 +187,14 @@ async def browse_topics(
         Category scheme name and flat list of categories.
     """
     c = _cache or _default_cache
-    if c.topics is not None:
-        return c.topics
+    cached = c.get_topics(lang)
+    if cached is not None:
+        return cached
     response = await client.get_categories()
     categories = parse_categories(response, lang)
-    c.topics = TopicTree(name="TEMAS_BALEARS", categories=categories)
-    return c.topics
+    tree = TopicTree(name="TEMAS_BALEARS", categories=categories)
+    c.set_topics(lang, tree)
+    return tree
 
 
 async def get_codelist(
@@ -224,12 +231,13 @@ async def get_codelist(
         Codelist ID, name, total count, and list of code entries.
     """
     c = _cache or _default_cache
-    cached = c.get_codelist(codelist_id)
+    cached = c.get_codelist(codelist_id, limit, offset, lang)
     if cached is not None:
         return cached
     response = await client.get_codelist_codes(codelist_id, limit=limit, offset=offset)
     codes = parse_codelist_codes(response, lang)
     total = response.get("total", len(codes))
-    result = CodelistResult(id=codelist_id, name=codelist_id, total=total, codes=codes)
-    c.set_codelist(codelist_id, result)
+    name = extract_localized_text(response.get("name"), lang) or codelist_id
+    result = CodelistResult(id=codelist_id, name=name, total=total, codes=codes)
+    c.set_codelist(codelist_id, limit, offset, lang, result)
     return result

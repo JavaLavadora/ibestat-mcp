@@ -16,7 +16,7 @@ from ibestat_mcp.models import DimensionInfo, DimensionValue
 
 
 def parse_dimensions(
-    metadata_response: dict, lang: str = "ca"
+    metadata_response: dict[str, Any], lang: str = "ca"
 ) -> list[DimensionInfo]:
     """Extract dimension info with localized labels from an API response.
 
@@ -60,7 +60,7 @@ def _parse_observation_value(raw: str) -> int | float | None:
 
 
 def parse_observations(
-    response: dict, lang: str = "ca"
+    response: dict[str, Any], lang: str = "ca"
 ) -> list[dict[str, Any]]:
     """Flatten a dataset response into a list of row dictionaries.
 

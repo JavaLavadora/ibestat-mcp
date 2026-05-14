@@ -627,6 +627,17 @@ class TestBrowseTopics:
 
         assert client.get_categories.call_count == 1
 
+    @pytest.mark.asyncio
+    async def test_different_language_refetches(self, categories_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = categories_response
+        test_cache = SemanticCache()
+
+        await browse_topics(client, lang="ca", _cache=test_cache)
+        await browse_topics(client, lang="es", _cache=test_cache)
+
+        assert client.get_categories.call_count == 2
+
 
 # ===========================================================================
 # TestGetCodelist
@@ -656,6 +667,17 @@ class TestGetCodelist:
         await get_codelist(client, "CL_AREA_ES53", lang="ca", _cache=test_cache)
 
         assert client.get_codelist_codes.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_different_pagination_refetches(self, codelist_codes_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_codelist_codes.return_value = codelist_codes_response
+        test_cache = SemanticCache()
+
+        await get_codelist(client, "CL_AREA_ES53", limit=100, offset=0, lang="ca", _cache=test_cache)
+        await get_codelist(client, "CL_AREA_ES53", limit=100, offset=100, lang="ca", _cache=test_cache)
+
+        assert client.get_codelist_codes.call_count == 2
 
     @pytest.mark.asyncio
     async def test_hierarchy_preserved(self, codelist_codes_response: dict[str, Any]) -> None:

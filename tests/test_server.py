@@ -73,13 +73,18 @@ async def test_search_datasets_tool_calls_client(search_datasets_response):
 
 
 @pytest.mark.asyncio
-async def test_get_dataset_info_tool_calls_client(dataset_metadata_response):
+async def test_get_dataset_info_tool_calls_client(
+    dataset_metadata_response, data_structure_response
+):
     """get_dataset_info tool should return structured dataset info."""
     server = create_server()
 
     mock_client = AsyncMock()
     mock_client.get_dataset_metadata = AsyncMock(
         return_value=dataset_metadata_response
+    )
+    mock_client.get_data_structure = AsyncMock(
+        return_value=data_structure_response
     )
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
