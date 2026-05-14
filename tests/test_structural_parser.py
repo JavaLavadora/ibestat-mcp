@@ -25,6 +25,12 @@ class TestParseCategories:
         child = next(c for c in result if c.id == "010_010")
         assert child.parent_id == "010"
 
+    def test_extracts_nested_id(self, categories_response: dict[str, Any]) -> None:
+        result = parse_categories(categories_response, lang="ca")
+        assert result[0].nested_id == "010"
+        child = next(c for c in result if c.id == "010_010")
+        assert child.nested_id == "010.010_010"
+
     def test_empty_response(self) -> None:
         assert parse_categories({"category": []}, lang="ca") == []
 
