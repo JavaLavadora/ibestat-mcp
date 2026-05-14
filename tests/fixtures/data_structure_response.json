@@ -1,0 +1,55 @@
+{
+  "id": "DSD_000001A_000001",
+  "urn": "urn:sdmx:org.sdmx.infomodel.datastructure.DataStructure=IBESTAT:DSD_000001A_000001(01.000)",
+  "kind": "structuralResources#dataStructure",
+  "dataStructureComponents": {
+    "dimensions": {
+      "dimension": [
+        {
+          "id": "TERRITORIO",
+          "urn": "urn:sdmx:org.sdmx.infomodel.datastructure.Dimension=IBESTAT:DSD_000001A_000001(01.000).TERRITORIO",
+          "type": "GEOGRAPHIC_DIMENSION",
+          "position": 1,
+          "localRepresentation": {
+            "enumerationCodelist": {
+              "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IBESTAT:CL_AREA_ES53(01.000)"
+            }
+          }
+        },
+        {
+          "id": "TIME_PERIOD",
+          "urn": "urn:sdmx:org.sdmx.infomodel.datastructure.Dimension=IBESTAT:DSD_000001A_000001(01.000).TIME_PERIOD",
+          "type": "TIME_DIMENSION",
+          "position": 2,
+          "localRepresentation": {
+            "textFormat": {
+              "textType": "OBSERVATIONAL_TIME_PERIOD"
+            }
+          }
+        },
+        {
+          "id": "SEXO",
+          "urn": "urn:sdmx:org.sdmx.infomodel.datastructure.Dimension=IBESTAT:DSD_000001A_000001(01.000).SEXO",
+          "type": "DIMENSION",
+          "position": 3,
+          "localRepresentation": {
+            "enumerationCodelist": {
+              "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IBESTAT:CL_SEX(01.000)"
+            }
+          }
+        }
+      ],
+      "measureDimension": {
+        "id": "MEDIDAS",
+        "urn": "urn:sdmx:org.sdmx.infomodel.datastructure.MeasureDimension=IBESTAT:DSD_000001A_000001(01.000).MEDIDAS",
+        "type": "MEASURE_DIMENSION",
+        "position": 4,
+        "localRepresentation": {
+          "enumerationCodelist": {
+            "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IBESTAT:CL_MEDIDAS_000001A(01.000)"
+          }
+        }
+      }
+    }
+  }
+}

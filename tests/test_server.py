@@ -42,12 +42,12 @@ def test_server_has_expected_name():
 
 
 @pytest.mark.asyncio
-async def test_server_has_three_tools():
-    """The server should register exactly three tools."""
+async def test_server_has_five_tools():
+    """The server should register exactly five tools."""
     server = create_server()
     tools = await server.list_tools()
     tool_names = {t.name for t in tools}
-    assert tool_names == {"search_datasets", "get_dataset_info", "get_data"}
+    assert tool_names == {"search_datasets", "get_dataset_info", "get_data", "browse_topics", "get_codelist"}
 
 
 @pytest.mark.asyncio
@@ -73,13 +73,18 @@ async def test_search_datasets_tool_calls_client(search_datasets_response):
 
 
 @pytest.mark.asyncio
-async def test_get_dataset_info_tool_calls_client(dataset_metadata_response):
+async def test_get_dataset_info_tool_calls_client(
+    dataset_metadata_response, data_structure_response
+):
     """get_dataset_info tool should return structured dataset info."""
     server = create_server()
 
     mock_client = AsyncMock()
     mock_client.get_dataset_metadata = AsyncMock(
         return_value=dataset_metadata_response
+    )
+    mock_client.get_data_structure = AsyncMock(
+        return_value=data_structure_response
     )
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
     mock_client.__aexit__ = AsyncMock(return_value=None)
@@ -223,3 +228,80 @@ async def test_get_data_passes_language(dataset_metadata_response):
             mock_tools.get_data.assert_awaited_once()
             call_kwargs = mock_tools.get_data.call_args
             assert call_kwargs.kwargs.get("lang") == "es"
+
+
+# ===========================================================================
+# New tool registration tests
+# ===========================================================================
+
+
+@pytest.mark.asyncio
+async def test_browse_topics_tool_registered():
+    """browse_topics tool should be registered."""
+    server = create_server()
+    tool_names = [t.name for t in await server.list_tools()]
+    assert "browse_topics" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_get_codelist_tool_registered():
+    """get_codelist tool should be registered."""
+    server = create_server()
+    tool_names = [t.name for t in await server.list_tools()]
+    assert "get_codelist" in tool_names
+
+
+@pytest.mark.asyncio
+async def test_browse_topics_tool_calls_client():
+    """browse_topics tool should create a client and return JSON text."""
+    from ibestat_mcp.models import TopicTree, Category
+
+    server = create_server()
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.browse_topics = AsyncMock(
+                return_value=TopicTree(
+                    name="TEMAS_BALEARS",
+                    categories=[Category(id="010", name="Test", parent_id=None)],
+                )
+            )
+            result = await server.call_tool("browse_topics", {})
+
+    text = _extract_text(result)
+    data = json.loads(text)
+    assert data["name"] == "TEMAS_BALEARS"
+    assert len(data["categories"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_get_codelist_tool_calls_client():
+    """get_codelist tool should create a client and return JSON text."""
+    from ibestat_mcp.models import CodelistResult, CodelistEntry
+
+    server = create_server()
+    mock_client = AsyncMock()
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=None)
+
+    with patch("ibestat_mcp.server.IbestatClient", return_value=mock_client):
+        with patch("ibestat_mcp.server.tool_functions") as mock_tools:
+            mock_tools.get_codelist = AsyncMock(
+                return_value=CodelistResult(
+                    id="CL_AREA_ES53",
+                    name="CL_AREA_ES53",
+                    total=1,
+                    codes=[CodelistEntry(code="ES53", label="Illes Balears", parent_code=None)],
+                )
+            )
+            result = await server.call_tool(
+                "get_codelist", {"codelist_id": "CL_AREA_ES53"}
+            )
+
+    text = _extract_text(result)
+    data = json.loads(text)
+    assert data["id"] == "CL_AREA_ES53"
+    assert len(data["codes"]) == 1

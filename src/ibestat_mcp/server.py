@@ -1,7 +1,6 @@
 """MCP server for the IBESTAT eDades statistical-resources API.
 
-Registers three tools (search_datasets, get_dataset_info, get_data) and
-exposes them via stdio transport.
+Registers five tools and exposes them via stdio transport.
 
 Usage::
 
@@ -85,13 +84,15 @@ def create_server() -> FastMCP:
         description=(
             "Get detailed metadata for an IBESTAT dataset, including its "
             "name and all available dimensions with their possible values. "
+            "Each dimension includes a codelist_id when available — use it "
+            "with get_codelist to explore the full hierarchy of valid codes. "
             "Use this after search_datasets to understand a dataset's "
             "structure before requesting data. "
             "Supports Catalan (ca), Spanish (es), and English (en) labels "
             "via the language parameter. "
             "Example: dataset_id='000001A_000001' returns dimensions like "
-            "TERRITORIO, TIME_PERIOD, SEXO, and MEDIDAS with all their codes "
-            "and labels."
+            "TERRITORIO (codelist_id='CL_AREA_ES53'), TIME_PERIOD, SEXO, "
+            "and MEDIDAS with all their codes and labels."
         ),
     )
     async def get_dataset_info(
@@ -175,6 +176,67 @@ def create_server() -> FastMCP:
                     client, dataset_id, filters, lang=language
                 )
             return json.dumps(rows, ensure_ascii=False)
+        except IbestatError as e:
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool(
+        description=(
+            "Browse IBESTAT's thematic topic tree to discover what statistical "
+            "domains are available (e.g., Demographics, Economy, Tourism, Labour). "
+            "Returns a hierarchical list of categories with parent references. "
+            "Use this FIRST to see what topics exist, then use the topic names "
+            "as search terms in search_datasets. "
+            "Supports Catalan (ca), Spanish (es), and English (en) labels."
+        ),
+    )
+    async def browse_topics(
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        """Browse IBESTAT's thematic topic tree."""
+        try:
+            async with IbestatClient() as client:
+                result = await tool_functions.browse_topics(client, lang=language)
+            return json.dumps(result.model_dump(), ensure_ascii=False)
+        except IbestatError as e:
+            return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    @mcp.tool(
+        description=(
+            "Get codes from an IBESTAT codelist with their hierarchical "
+            "parent-child relationships. Use the codelist_id from "
+            "get_dataset_info to explore valid filter values at all levels "
+            "(e.g., region > island > municipality for geographic codes). "
+            "Supports pagination for large codelists."
+        ),
+    )
+    async def get_codelist(
+        codelist_id: Annotated[
+            str,
+            Field(description="Codelist identifier from get_dataset_info (e.g., 'CL_AREA_ES53')."),
+        ],
+        limit: Annotated[
+            int,
+            Field(description="Max codes to return (default: 100)."),
+        ] = 100,
+        offset: Annotated[
+            int,
+            Field(description="Pagination offset (default: 0)."),
+        ] = 0,
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        """Get hierarchical codes from an IBESTAT codelist."""
+        try:
+            async with IbestatClient() as client:
+                result = await tool_functions.get_codelist(
+                    client, codelist_id, limit=limit, offset=offset, lang=language
+                )
+            return json.dumps(result.model_dump(), ensure_ascii=False)
         except IbestatError as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
 

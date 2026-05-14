@@ -9,7 +9,7 @@ import httpx
 import pytest
 import respx
 
-from ibestat_mcp.client import BASE_URL, IbestatClient, IbestatError
+from ibestat_mcp.client import BASE_URL, STRUCTURAL_BASE_URL, IbestatClient, IbestatError
 
 
 # ---------------------------------------------------------------------------
@@ -292,3 +292,71 @@ class TestContextManager:
         custom_url = "https://custom.example.com/api/v1"
         client = IbestatClient(base_url=custom_url)
         assert client._base_url == custom_url
+
+
+# ===========================================================================
+# TestGetCategories
+# ===========================================================================
+
+
+class TestGetCategories:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_correct_url(self, categories_response: dict[str, Any]) -> None:
+        """get_categories sends the correct URL for the TEMAS_BALEARS category scheme."""
+        route = respx.get(
+            f"{STRUCTURAL_BASE_URL}/categoryschemes/IBESTAT/TEMAS_BALEARS/~latest/categories"
+        ).mock(return_value=httpx.Response(200, json=categories_response))
+
+        async with IbestatClient() as client:
+            result = await client.get_categories()
+
+        assert route.called
+        assert result["total"] == 4
+
+
+# ===========================================================================
+# TestGetCodelistCodes
+# ===========================================================================
+
+
+class TestGetCodelistCodes:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_correct_url_and_pagination(
+        self, codelist_codes_response: dict[str, Any]
+    ) -> None:
+        """get_codelist_codes sends the correct URL with limit/offset params."""
+        route = respx.get(
+            f"{STRUCTURAL_BASE_URL}/codelists/IBESTAT/CL_AREA_ES53/~latest/codes"
+        ).mock(return_value=httpx.Response(200, json=codelist_codes_response))
+
+        async with IbestatClient() as client:
+            result = await client.get_codelist_codes("CL_AREA_ES53", limit=50, offset=10)
+
+        assert route.called
+        request = route.calls[0].request
+        url_decoded = urllib.parse.unquote_plus(str(request.url))
+        assert "limit=50" in url_decoded
+        assert "offset=10" in url_decoded
+
+
+# ===========================================================================
+# TestGetDataStructure
+# ===========================================================================
+
+
+class TestGetDataStructure:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_correct_url(self, data_structure_response: dict[str, Any]) -> None:
+        """get_data_structure sends the correct URL for a DSD."""
+        route = respx.get(
+            f"{STRUCTURAL_BASE_URL}/datastructures/IBESTAT/DSD_000001A_000001/~latest"
+        ).mock(return_value=httpx.Response(200, json=data_structure_response))
+
+        async with IbestatClient() as client:
+            result = await client.get_data_structure("DSD_000001A_000001")
+
+        assert route.called
+        assert result["id"] == "DSD_000001A_000001"

@@ -8,9 +8,19 @@ a ``lang`` parameter to select the language for data labels (``"ca"``,
 
 from __future__ import annotations
 
+import logging
+
+from ibestat_mcp.cache import SemanticCache, cache as _default_cache
 from ibestat_mcp.client import IbestatClient
-from ibestat_mcp.models import DataRow, DatasetInfo, DatasetSummary
+from ibestat_mcp.models import CodelistResult, DataRow, DatasetInfo, DatasetSummary, TopicTree
 from ibestat_mcp.parser import extract_localized_text, parse_dimensions, parse_observations
+from ibestat_mcp.structural_parser import (
+    extract_codelist_ids_from_dsd,
+    parse_categories,
+    parse_codelist_codes,
+)
+
+logger = logging.getLogger(__name__)
 
 
 async def search_datasets(
@@ -75,6 +85,7 @@ async def get_dataset_info(
     client: IbestatClient,
     dataset_id: str,
     lang: str = "ca",
+    _cache: SemanticCache | None = None,
 ) -> DatasetInfo:
     """Fetch dataset metadata and return structured dimension info.
 
@@ -86,15 +97,38 @@ async def get_dataset_info(
         The dataset identifier (e.g. ``"000001A_000001"``).
     lang:
         Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
+    _cache:
+        Optional cache override for testing.
 
     Returns
     -------
     DatasetInfo
         Dataset name and parsed dimension information in the requested language.
+        Each dimension includes ``codelist_id`` when a DSD mapping is available.
     """
+    c = _cache or _default_cache
     response = await client.get_dataset_metadata(dataset_id)
     name = extract_localized_text(response.get("name"), lang)
     dimensions = parse_dimensions(response, lang)
+
+    codelist_map = c.get_dsd_codelist_map(dataset_id)
+    if codelist_map is None:
+        try:
+            related_dsd = response.get("metadata", {}).get("relatedDsd", {})
+            dsd_id = related_dsd.get("id")
+            if dsd_id:
+                dsd_response = await client.get_data_structure(dsd_id)
+                codelist_map = extract_codelist_ids_from_dsd(dsd_response)
+                c.set_dsd_codelist_map(dataset_id, codelist_map)
+        except Exception:
+            logger.debug("DSD lookup failed for %s", dataset_id, exc_info=True)
+            codelist_map = {}
+
+    if codelist_map is None:
+        codelist_map = {}
+
+    for dim in dimensions:
+        dim.codelist_id = codelist_map.get(dim.id)
 
     return DatasetInfo(name=name, dimensions=dimensions)
 
@@ -126,3 +160,84 @@ async def get_data(
     """
     response = await client.get_dataset_data(dataset_id, filters=filters)
     return parse_observations(response, lang)
+
+
+async def browse_topics(
+    client: IbestatClient,
+    lang: str = "ca",
+    _cache: SemanticCache | None = None,
+) -> TopicTree:
+    """Fetch the IBESTAT thematic topic tree.
+
+    Returns a flat list of categories with parent references, representing
+    the TEMAS_BALEARS category scheme.  Cached after first call.
+
+    Parameters
+    ----------
+    client:
+        An initialised IBESTAT API client.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
+    _cache:
+        Optional cache override for testing.
+
+    Returns
+    -------
+    TopicTree
+        Category scheme name and flat list of categories.
+    """
+    c = _cache or _default_cache
+    cached = c.get_topics(lang)
+    if cached is not None:
+        return cached
+    response = await client.get_categories()
+    categories = parse_categories(response, lang)
+    tree = TopicTree(name="TEMAS_BALEARS", categories=categories)
+    c.set_topics(lang, tree)
+    return tree
+
+
+async def get_codelist(
+    client: IbestatClient,
+    codelist_id: str,
+    limit: int = 100,
+    offset: int = 0,
+    lang: str = "ca",
+    _cache: SemanticCache | None = None,
+) -> CodelistResult:
+    """Fetch codes from a codelist with hierarchical parent-child relationships.
+
+    Use the ``codelist_id`` from ``get_dataset_info`` to explore valid filter
+    values at all hierarchy levels.  Cached after first call per codelist.
+
+    Parameters
+    ----------
+    client:
+        An initialised IBESTAT API client.
+    codelist_id:
+        Codelist identifier (e.g. ``"CL_AREA_ES53"``).
+    limit:
+        Maximum number of codes to return.
+    offset:
+        Pagination offset.
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
+    _cache:
+        Optional cache override for testing.
+
+    Returns
+    -------
+    CodelistResult
+        Codelist ID, name, total count, and list of code entries.
+    """
+    c = _cache or _default_cache
+    cached = c.get_codelist(codelist_id, limit, offset, lang)
+    if cached is not None:
+        return cached
+    response = await client.get_codelist_codes(codelist_id, limit=limit, offset=offset)
+    codes = parse_codelist_codes(response, lang)
+    total = response.get("total", len(codes))
+    name = extract_localized_text(response.get("name"), lang) or codelist_id
+    result = CodelistResult(id=codelist_id, name=name, total=total, codes=codes)
+    c.set_codelist(codelist_id, limit, offset, lang, result)
+    return result

@@ -1,0 +1,52 @@
+{
+  "kind": "structuralResources#categories",
+  "total": 4,
+  "category": [
+    {
+      "id": "010",
+      "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).010",
+      "name": {
+        "text": [
+          {"value": "Demografia", "lang": "ca"},
+          {"value": "Demografía", "lang": "es"},
+          {"value": "Demography", "lang": "en"}
+        ]
+      }
+    },
+    {
+      "id": "010_010",
+      "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).010.010_010",
+      "name": {
+        "text": [
+          {"value": "Població", "lang": "ca"},
+          {"value": "Población", "lang": "es"},
+          {"value": "Population", "lang": "en"}
+        ]
+      },
+      "parent": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).010"
+    },
+    {
+      "id": "020",
+      "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).020",
+      "name": {
+        "text": [
+          {"value": "Economia", "lang": "ca"},
+          {"value": "Economía", "lang": "es"},
+          {"value": "Economy", "lang": "en"}
+        ]
+      }
+    },
+    {
+      "id": "020_010",
+      "urn": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).020.020_010",
+      "name": {
+        "text": [
+          {"value": "Mercat de treball", "lang": "ca"},
+          {"value": "Mercado de trabajo", "lang": "es"},
+          {"value": "Labour market", "lang": "en"}
+        ]
+      },
+      "parent": "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category=IBESTAT:CLASIF_TEMAS_CANALES(01.000).020"
+    }
+  ]
+}

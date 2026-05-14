@@ -7,8 +7,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from ibestat_mcp.models import DatasetInfo, DatasetSummary
-from ibestat_mcp.tools import get_data, get_dataset_info, search_datasets
+from ibestat_mcp.cache import SemanticCache
+from ibestat_mcp.models import CodelistResult, DatasetInfo, DatasetSummary, TopicTree
+from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, search_datasets
 
 
 # ---------------------------------------------------------------------------
@@ -595,3 +596,165 @@ class TestGetDataLanguage:
         result = await get_data(client, "TEST_LANG", lang="en")
 
         assert result[0] == {"Reference area": "Palma", "Population": 500}
+
+
+# ===========================================================================
+# TestBrowseTopics
+# ===========================================================================
+
+
+class TestBrowseTopics:
+    @pytest.mark.asyncio
+    async def test_returns_topic_tree(self, categories_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = categories_response
+        test_cache = SemanticCache()
+
+        result = await browse_topics(client, lang="ca", _cache=test_cache)
+
+        assert isinstance(result, TopicTree)
+        assert result.name == "TEMAS_BALEARS"
+        assert len(result.categories) == 4
+
+    @pytest.mark.asyncio
+    async def test_uses_cache_on_second_call(self, categories_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = categories_response
+        test_cache = SemanticCache()
+
+        await browse_topics(client, lang="ca", _cache=test_cache)
+        await browse_topics(client, lang="ca", _cache=test_cache)
+
+        assert client.get_categories.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_different_language_refetches(self, categories_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_categories.return_value = categories_response
+        test_cache = SemanticCache()
+
+        await browse_topics(client, lang="ca", _cache=test_cache)
+        await browse_topics(client, lang="es", _cache=test_cache)
+
+        assert client.get_categories.call_count == 2
+
+
+# ===========================================================================
+# TestGetCodelist
+# ===========================================================================
+
+
+class TestGetCodelist:
+    @pytest.mark.asyncio
+    async def test_returns_codelist_result(self, codelist_codes_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_codelist_codes.return_value = codelist_codes_response
+        test_cache = SemanticCache()
+
+        result = await get_codelist(client, "CL_AREA_ES53", lang="ca", _cache=test_cache)
+
+        assert isinstance(result, CodelistResult)
+        assert result.id == "CL_AREA_ES53"
+        assert result.total == 3
+
+    @pytest.mark.asyncio
+    async def test_uses_cache_on_second_call(self, codelist_codes_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_codelist_codes.return_value = codelist_codes_response
+        test_cache = SemanticCache()
+
+        await get_codelist(client, "CL_AREA_ES53", lang="ca", _cache=test_cache)
+        await get_codelist(client, "CL_AREA_ES53", lang="ca", _cache=test_cache)
+
+        assert client.get_codelist_codes.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_different_pagination_refetches(self, codelist_codes_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_codelist_codes.return_value = codelist_codes_response
+        test_cache = SemanticCache()
+
+        await get_codelist(client, "CL_AREA_ES53", limit=100, offset=0, lang="ca", _cache=test_cache)
+        await get_codelist(client, "CL_AREA_ES53", limit=100, offset=100, lang="ca", _cache=test_cache)
+
+        assert client.get_codelist_codes.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_hierarchy_preserved(self, codelist_codes_response: dict[str, Any]) -> None:
+        client = AsyncMock()
+        client.get_codelist_codes.return_value = codelist_codes_response
+        test_cache = SemanticCache()
+
+        result = await get_codelist(client, "CL_AREA_ES53", lang="ca", _cache=test_cache)
+
+        palma = next(c for c in result.codes if c.code == "07040")
+        assert palma.parent_code == "07"
+
+
+# ===========================================================================
+# TestGetDatasetInfoCodelistId
+# ===========================================================================
+
+
+class TestGetDatasetInfoCodelistId:
+    @pytest.mark.asyncio
+    async def test_includes_codelist_id(
+        self,
+        dataset_metadata_response: dict[str, Any],
+        data_structure_response: dict[str, Any],
+    ) -> None:
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = dataset_metadata_response
+        client.get_data_structure.return_value = data_structure_response
+        test_cache = SemanticCache()
+
+        result = await get_dataset_info(client, "000001A_000001", lang="ca", _cache=test_cache)
+
+        territorio = next(d for d in result.dimensions if d.id == "TERRITORIO")
+        assert territorio.codelist_id == "CL_AREA_ES53"
+
+    @pytest.mark.asyncio
+    async def test_no_codelist_for_time(
+        self,
+        dataset_metadata_response: dict[str, Any],
+        data_structure_response: dict[str, Any],
+    ) -> None:
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = dataset_metadata_response
+        client.get_data_structure.return_value = data_structure_response
+        test_cache = SemanticCache()
+
+        result = await get_dataset_info(client, "000001A_000001", lang="ca", _cache=test_cache)
+
+        time_dim = next(d for d in result.dimensions if d.id == "TIME_PERIOD")
+        assert time_dim.codelist_id is None
+
+    @pytest.mark.asyncio
+    async def test_caches_dsd_map(
+        self,
+        dataset_metadata_response: dict[str, Any],
+        data_structure_response: dict[str, Any],
+    ) -> None:
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = dataset_metadata_response
+        client.get_data_structure.return_value = data_structure_response
+        test_cache = SemanticCache()
+
+        await get_dataset_info(client, "000001A_000001", lang="ca", _cache=test_cache)
+        await get_dataset_info(client, "000001A_000001", lang="ca", _cache=test_cache)
+
+        assert client.get_data_structure.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_graceful_fallback_on_dsd_error(self) -> None:
+        client = AsyncMock()
+        client.get_dataset_metadata.return_value = _make_metadata_response(
+            name_ca="Test dataset"
+        )
+        client.get_data_structure.side_effect = Exception("not found")
+        test_cache = SemanticCache()
+
+        result = await get_dataset_info(client, "TEST_001", lang="ca", _cache=test_cache)
+
+        assert len(result.dimensions) > 0
+        assert all(d.codelist_id is None for d in result.dimensions)
