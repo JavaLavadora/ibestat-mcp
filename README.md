@@ -59,8 +59,8 @@ On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 Once configured, the LLM follows a five-step workflow:
 
 1. **Browse topics** -- `browse_topics` shows IBESTAT's full thematic catalog so the LLM knows what vocabulary to use.
-2. **Search** -- `search_datasets` finds datasets using terms from the topic tree (e.g., "turismo", "mercado laboral").
-3. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist.
+2. **Search** -- `search_datasets` finds datasets using terms from the topic tree (e.g., "turisme", "mercat laboral").
+3. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist. `codelist_id` allows to gather context for the dimension using the APIs internal semantic conventions.
 4. **Explore codelists** -- `get_codelist` with the `codelist_id` shows the full hierarchy (e.g., Illes Balears > Mallorca > Palma) so the LLM can discover valid filter values at any level.
 5. **Query** -- `get_data` fetches rows using the known-valid filter codes.
 
