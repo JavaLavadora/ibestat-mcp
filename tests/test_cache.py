@@ -1,7 +1,7 @@
 """Tests for ibestat_mcp.cache module."""
 
 from ibestat_mcp.cache import SemanticCache
-from ibestat_mcp.models import TopicTree, Category, CodelistResult, CodelistEntry
+from ibestat_mcp.models import TopicTree, Category, CodelistResult, CodelistEntry, TopicDatasets, DatasetSummary
 
 
 class TestSemanticCache:
@@ -72,3 +72,37 @@ class TestSemanticCache:
         cache.set_codelist("CL", 100, 0, "es", result_es)
         assert cache.get_codelist("CL", 100, 0, "ca").codes[0].label == "Catala"
         assert cache.get_codelist("CL", 100, 0, "es").codes[0].label == "Espanol"
+
+
+class TestTopicDatasetsCache:
+    def test_initially_none(self) -> None:
+        cache = SemanticCache()
+        assert cache.get_topic_datasets("010", "ca") is None
+
+    def test_store_and_retrieve(self) -> None:
+        cache = SemanticCache()
+        result = TopicDatasets(
+            category_id="010_010",
+            category_name="Poblacio",
+            datasets=[DatasetSummary(id="DS1", name="Test", description=None, link="")],
+            total=1,
+            note="Cached.",
+        )
+        cache.set_topic_datasets("010_010", "ca", result)
+        assert cache.get_topic_datasets("010_010", "ca").total == 1
+
+    def test_keyed_by_language(self) -> None:
+        cache = SemanticCache()
+        result_ca = TopicDatasets(
+            category_id="010_010", category_name="Poblacio",
+            datasets=[], total=0, note="CA",
+        )
+        result_es = TopicDatasets(
+            category_id="010_010", category_name="Poblacion",
+            datasets=[], total=0, note="ES",
+        )
+        cache.set_topic_datasets("010_010", "ca", result_ca)
+        cache.set_topic_datasets("010_010", "es", result_es)
+        assert cache.get_topic_datasets("010_010", "ca").note == "CA"
+        assert cache.get_topic_datasets("010_010", "es").note == "ES"
+        assert cache.get_topic_datasets("010_010", "en") is None
