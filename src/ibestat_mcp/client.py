@@ -19,6 +19,7 @@ import httpx
 
 BASE_URL = "https://ibestat.es/edatos/apis/statistical-resources/v1.0"
 STRUCTURAL_BASE_URL = "https://ibestat.es/edatos/apis/structural-resources/v1.0"
+OPERATIONS_BASE_URL = "https://ibestat.es/edatos/apis/operations/v1.0"
 TIMEOUT = 30.0
 
 
@@ -39,9 +40,11 @@ class IbestatClient:
         self,
         base_url: str = BASE_URL,
         structural_base_url: str = STRUCTURAL_BASE_URL,
+        operations_base_url: str = OPERATIONS_BASE_URL,
     ) -> None:
         self._base_url = base_url
         self._structural_base_url = structural_base_url
+        self._operations_base_url = operations_base_url
         self._http: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> IbestatClient:
@@ -237,4 +240,69 @@ class IbestatClient:
         """
         return await self._get(
             f"{self._structural_base_url}/datastructures/IBESTAT/{dsd_id}/~latest",
+        )
+
+    # ------------------------------------------------------------------
+    # Operations API
+    # ------------------------------------------------------------------
+
+    async def get_operations_by_subject(
+        self, nested_id: str, limit: int = 1000, offset: int = 0
+    ) -> dict[str, Any]:
+        """Fetch statistical operations for a category.
+
+        Parameters
+        ----------
+        nested_id:
+            Category nested ID in dot notation (e.g. ``"010.010_010"``).
+        limit:
+            Maximum number of results (default 1000).
+        offset:
+            Pagination offset (default 0).
+
+        Returns
+        -------
+        dict[str, Any]
+            Raw API response containing ``operation`` list.
+        """
+        urn = (
+            "urn:sdmx:org.sdmx.infomodel.categoryscheme.Category="
+            f"IBESTAT:TEMAS_BALEARS(03.000).{nested_id}"
+        )
+        return await self._get(
+            f"{self._operations_base_url}/operations",
+            params=[
+                ("query", f'SUBJECT_AREA_URN EQ "{urn}"'),
+                ("limit", str(limit)),
+                ("offset", str(offset)),
+            ],
+        )
+
+    async def get_datasets_by_operation(
+        self, operation_id: str, limit: int = 1000
+    ) -> dict[str, Any]:
+        """Fetch datasets for a statistical operation.
+
+        Parameters
+        ----------
+        operation_id:
+            Operation identifier (e.g. ``"000001A"``).
+        limit:
+            Maximum number of results (default 1000).
+
+        Returns
+        -------
+        dict[str, Any]
+            Raw API response containing ``dataset`` list.
+        """
+        urn = (
+            "urn:siemac:org.siemac.metamac.infomodel."
+            f"statisticaloperations.Operation={operation_id}"
+        )
+        return await self._get(
+            f"{self._base_url}/datasets",
+            params=[
+                ("query", f'STATISTICAL_OPERATION_URN EQ "{urn}"'),
+                ("limit", str(limit)),
+            ],
         )

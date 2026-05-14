@@ -9,7 +9,7 @@ import httpx
 import pytest
 import respx
 
-from ibestat_mcp.client import BASE_URL, STRUCTURAL_BASE_URL, IbestatClient, IbestatError
+from ibestat_mcp.client import BASE_URL, STRUCTURAL_BASE_URL, OPERATIONS_BASE_URL, IbestatClient, IbestatError
 
 
 # ---------------------------------------------------------------------------
@@ -360,3 +360,78 @@ class TestGetDataStructure:
 
         assert route.called
         assert result["id"] == "DSD_000001A_000001"
+
+
+# ===========================================================================
+# TestGetOperationsBySubject
+# ===========================================================================
+
+
+class TestGetOperationsBySubject:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_queries_operations_api(self, operations_response: dict[str, Any]) -> None:
+        route = respx.get(f"{OPERATIONS_BASE_URL}/operations").respond(
+            json=operations_response
+        )
+
+        async with IbestatClient() as client:
+            result = await client.get_operations_by_subject("010.010_010")
+
+        assert route.called
+        request = route.calls[0].request
+        assert "SUBJECT_AREA_URN" in str(request.url)
+        assert "010.010_010" in str(request.url)
+        assert len(result["operation"]) == 2
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_pagination_params(self, operations_response: dict[str, Any]) -> None:
+        route = respx.get(f"{OPERATIONS_BASE_URL}/operations").respond(
+            json=operations_response
+        )
+
+        async with IbestatClient() as client:
+            await client.get_operations_by_subject("010.010_010", limit=5, offset=10)
+
+        request = route.calls[0].request
+        assert "limit=5" in str(request.url)
+        assert "offset=10" in str(request.url)
+
+
+# ===========================================================================
+# TestGetDatasetsByOperation
+# ===========================================================================
+
+
+class TestGetDatasetsByOperation:
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_queries_datasets_with_operation_urn(
+        self, datasets_by_operation_response: dict[str, Any]
+    ) -> None:
+        route = respx.get(f"{BASE_URL}/datasets").respond(
+            json=datasets_by_operation_response
+        )
+
+        async with IbestatClient() as client:
+            result = await client.get_datasets_by_operation("000001A")
+
+        assert route.called
+        request = route.calls[0].request
+        assert "STATISTICAL_OPERATION_URN" in str(request.url)
+        assert "000001A" in str(request.url)
+        assert len(result["dataset"]) == 2
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_limit_param(self, datasets_by_operation_response: dict[str, Any]) -> None:
+        route = respx.get(f"{BASE_URL}/datasets").respond(
+            json=datasets_by_operation_response
+        )
+
+        async with IbestatClient() as client:
+            await client.get_datasets_by_operation("000001A", limit=50)
+
+        request = route.calls[0].request
+        assert "limit=50" in str(request.url)
