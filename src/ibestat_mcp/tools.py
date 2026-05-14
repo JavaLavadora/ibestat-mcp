@@ -12,7 +12,10 @@ import logging
 
 from ibestat_mcp.cache import SemanticCache, cache as _default_cache
 from ibestat_mcp.client import IbestatClient
-from ibestat_mcp.models import CodelistResult, DataRow, DatasetInfo, DatasetSummary, TopicTree
+from ibestat_mcp.models import (
+    CodelistResult, DataRow, DatasetInfo, DatasetSummary,
+    TopicDatasets, TopicTree,
+)
 from ibestat_mcp.parser import extract_localized_text, parse_dimensions, parse_observations
 from ibestat_mcp.structural_parser import (
     extract_codelist_ids_from_dsd,
@@ -240,4 +243,124 @@ async def get_codelist(
     name = extract_localized_text(response.get("name"), lang) or codelist_id
     result = CodelistResult(id=codelist_id, name=name, total=total, codes=codes)
     c.set_codelist(codelist_id, limit, offset, lang, result)
+    return result
+
+
+async def list_datasets_by_topic(
+    client: IbestatClient,
+    category_id: str,
+    lang: str = "ca",
+    _cache: SemanticCache | None = None,
+) -> TopicDatasets:
+    """List all datasets under an IBESTAT thematic category.
+
+    Resolves category -> operations -> datasets via the IBESTAT Operations
+    API.  For parent categories, all leaf children are queried and results
+    are merged.  Results are cached per ``(category_id, lang)``.
+
+    Parameters
+    ----------
+    client:
+        An initialised IBESTAT API client.
+    category_id:
+        Category ID from ``browse_topics`` (e.g. ``"010_010"``).
+    lang:
+        Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
+    _cache:
+        Optional cache override for testing.
+
+    Returns
+    -------
+    TopicDatasets
+        Category info, dataset list, and a caching note.
+
+    Raises
+    ------
+    IbestatError
+        If the category is not found in the topic tree.
+    """
+    from ibestat_mcp.client import IbestatError
+
+    c = _cache or _default_cache
+    cached = c.get_topic_datasets(category_id, lang)
+    if cached is not None:
+        return cached
+
+    topic_tree = c.get_topics(lang)
+    if topic_tree is None:
+        topic_tree = await browse_topics(client, lang=lang, _cache=c)
+
+    category = next((cat for cat in topic_tree.categories if cat.id == category_id), None)
+    if category is None:
+        raise IbestatError(
+            f"Category '{category_id}' not found. "
+            "Use browse_topics to see available categories."
+        )
+
+    children = [
+        cat for cat in topic_tree.categories if cat.parent_id == category_id
+    ]
+    is_parent = len(children) > 0
+
+    if is_parent:
+        nested_ids = [cat.nested_id for cat in children if cat.nested_id]
+        category_name = category.name
+    else:
+        nested_ids = [category.nested_id] if category.nested_id else []
+        category_name = category.name
+
+    seen: set[str] = set()
+    datasets: list[DatasetSummary] = []
+    total_operations = 0
+
+    for nested_id in nested_ids:
+        try:
+            ops_response = await client.get_operations_by_subject(nested_id)
+        except Exception:
+            logger.debug("Operations lookup failed for %s", nested_id, exc_info=True)
+            continue
+
+        operations = ops_response.get("operation", [])
+        total_operations += len(operations)
+
+        for op in operations:
+            op_id = op["id"]
+            try:
+                ds_response = await client.get_datasets_by_operation(op_id)
+            except Exception:
+                logger.debug("Datasets lookup failed for operation %s", op_id, exc_info=True)
+                continue
+
+            for entry in ds_response.get("dataset", []):
+                ds_id = entry["id"]
+                if ds_id in seen:
+                    continue
+                seen.add(ds_id)
+                name = extract_localized_text(entry.get("name"), lang)
+                description_field = entry.get("description")
+                description_raw = (
+                    extract_localized_text(description_field, lang)
+                    if description_field is not None
+                    else None
+                )
+                description = description_raw or None
+                link = entry.get("visualizerHtmlLink", "")
+                datasets.append(DatasetSummary(
+                    id=ds_id, name=name, description=description, link=link,
+                ))
+
+    note = (
+        f"First call fetched from the API and cached the result "
+        f"({total_operations} operations queried). "
+        f"Subsequent calls for category '{category_id}' in '{lang}' are instant."
+    )
+
+    result = TopicDatasets(
+        category_id=category_id,
+        category_name=category_name,
+        datasets=datasets,
+        total=len(datasets),
+        note=note,
+    )
+    c.set_topic_datasets(category_id, lang, result)
     return result
