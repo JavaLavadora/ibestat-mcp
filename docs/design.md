@@ -26,28 +26,34 @@ The tool design serves both: the LLM orchestrates the three-step workflow transp
 
 ```
 ibestat-mcp/
-├── pyproject.toml          # Package config, entry point, dependencies
+├── pyproject.toml              # Package config, entry point, dependencies
 ├── src/
 │   └── ibestat_mcp/
 │       ├── __init__.py
-│       ├── server.py       # MCP server setup, tool registration
-│       ├── tools.py        # Tool definitions (search, info, data)
-│       ├── client.py       # HTTP client for IBESTAT eDades API
-│       ├── parser.py       # Observation parsing -> flat tables
-│       └── models.py       # Pydantic models for API responses
+│       ├── server.py           # MCP server setup, tool registration
+│       ├── tools.py            # Tool functions (search, info, data, topics, codelist)
+│       ├── client.py           # HTTP client for IBESTAT eDades API (statistical + structural)
+│       ├── parser.py           # Statistical-resources response parsing
+│       ├── structural_parser.py # Structural-resources response parsing
+│       ├── models.py           # Pydantic models for API responses
+│       ├── cache.py            # SemanticCache for structural metadata
+│       └── _i18n.py            # Shared i18n utilities
 └── tests/
     └── ...
 ```
 
 ### Module Responsibilities
 
-**`client.py`** — The only module that knows about IBESTAT API URLs and response shapes. Single class `IbestatClient` using `httpx.AsyncClient`. Three methods:
+**`client.py`** — The only module that knows about IBESTAT API URLs and response shapes. Single class `IbestatClient` using `httpx.AsyncClient`. Six methods:
 
 - `search_datasets(query, limit)` — keyword search across datasets
 - `get_dataset_metadata(dataset_id)` — full dataset structure with dimensions
 - `get_dataset_data(dataset_id, filters)` — observation data with optional dimension filters
+- `get_categories()` — thematic category tree from structural-resources API
+- `get_codelist_codes(codelist_id, limit, offset)` — codelist codes with hierarchy
+- `get_data_structure(dsd_id)` — data structure definition
 
-Base URL: `https://ibestat.es/edatos/apis/statistical-resources/v1.0`
+Base URLs: `statistical-resources/v1.0` and `structural-resources/v1.0`
 
 Extensibility: adding PC-Axis or other backends means creating a new client class with the same interface, not changing tools.
 
@@ -67,7 +73,13 @@ Extensibility: adding PC-Axis or other backends means creating a new client clas
 
 **`tools.py`** — Tool function definitions that wire MCP tool calls to client + parser.
 
-**`server.py`** — MCP server setup using the `mcp` Python SDK. Registers three tools, runs via stdio transport.
+**`structural_parser.py`** — Parses structural-resources API responses: category schemes, codelist codes, DSD dimension-to-codelist mappings.
+
+**`cache.py`** — `SemanticCache` class storing topic tree, DSD codelist maps, and codelist results in memory for the server session.
+
+**`_i18n.py`** — Shared i18n utilities (`extract_localized_text`, `strip_accents`) used by both `parser.py` and `structural_parser.py`.
+
+**`server.py`** — MCP server setup using the `mcp` Python SDK. Registers five tools, runs via stdio transport.
 
 ## MCP Tools
 
@@ -151,11 +163,14 @@ Fetch actual data from a dataset, optionally filtered by dimensions.
 - **Dimension representations** — each dimension includes `code` to `index` mappings and multilingual labels
 - **Total datasets** — ~3,730 datasets available
 
-### Structural Resources API (future extensibility)
+### Structural Resources API
 
 Base URL: `https://ibestat.es/edatos/apis/structural-resources/v1.0`
 
-Available for richer metadata: organization schemes, theme classifications, concept schemes, variable families, data structure definitions. Not in scope for v1 but the client architecture supports adding it.
+Endpoints used:
+- `GET /categoryschemes/IBESTAT/TEMAS_BALEARS/~latest/categories` -- topic tree (52 categories)
+- `GET /codelists/IBESTAT/{id}/~latest/codes` -- codelist codes with hierarchy
+- `GET /datastructures/IBESTAT/{id}/~latest` -- DSD (dimension-to-codelist mapping)
 
 ## Dependencies
 
@@ -188,10 +203,42 @@ Minimal footprint. No heavy data libraries — flat dict construction is suffici
 
 All errors are returned as MCP tool error responses, not exceptions — the LLM can read the error and adjust.
 
-## Out of Scope (v1)
+## Semantic Layer (Structural Resources)
+
+### Caching
+
+`SemanticCache` (in `cache.py`) stores structural data in memory for the server process lifetime. Topics, DSD mappings, and codelists are fetched once on first use.
+
+### Key Concepts
+
+- **Category scheme (TEMAS_BALEARS)**: 52 thematic categories in a parent-child tree
+- **Codelist**: Hierarchical lookup table for a dimension's valid codes (e.g., geographic codes organized as region > island > municipality)
+- **DSD (Data Structure Definition)**: Blueprint that maps each dataset dimension to its codelist
+- **codelist_id**: Field on DimensionInfo returned by `get_dataset_info`, linking a dimension to its codelist for use with `get_codelist`
+
+### New Tools
+
+**`browse_topics`** -- Fetches the TEMAS_BALEARS category scheme and returns a flat list of categories with parent references. Cached after first call.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `language` | string | no | Language for labels: ca, es, en (default: ca) |
+
+**`get_codelist`** -- Fetches codes from a codelist with hierarchical parent-child relationships. Cached per codelist.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `codelist_id` | string | yes | Codelist identifier from `get_dataset_info` (e.g., "CL_AREA_ES53") |
+| `limit` | int | no | Max codes to return (default: 100) |
+| `offset` | int | no | Pagination offset (default: 0) |
+| `language` | string | no | Language for labels: ca, es, en (default: ca) |
+
+### Enhanced Tool: `get_dataset_info`
+
+Now returns `codelist_id` per dimension when a DSD mapping is available. The DSD is fetched from the structural-resources API and cached per dataset. Falls back gracefully (codelist_id = null) if the DSD is unavailable.
+
+## Out of Scope
 
 - PC-Axis repository API support
 - Export API (Excel/image downloads)
-- Structural resources API (rich metadata)
-- Caching layer
 - Authentication / rate limiting (API is public and no limits documented)

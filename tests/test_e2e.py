@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import pytest
 
+from ibestat_mcp.cache import SemanticCache
 from ibestat_mcp.client import IbestatClient
-from ibestat_mcp.tools import get_data, get_dataset_info, search_datasets
+from ibestat_mcp.tools import browse_topics, get_codelist, get_data, get_dataset_info, search_datasets
 
 
 @pytest.mark.e2e
@@ -52,3 +53,42 @@ class TestEndToEnd:
             # Verify no accent characters in column names
             for key in first_row.keys():
                 assert key.isascii(), f"Column name '{key}' should be ASCII (accents stripped)"
+
+
+@pytest.mark.e2e
+class TestBrowseTopicsE2E:
+    @pytest.mark.asyncio
+    async def test_returns_categories(self) -> None:
+        async with IbestatClient() as client:
+            result = await browse_topics(client, lang="es", _cache=SemanticCache())
+        assert len(result.categories) > 0
+        top_level = [c for c in result.categories if c.parent_id is None]
+        assert len(top_level) > 0
+
+
+@pytest.mark.e2e
+class TestGetCodelistE2E:
+    @pytest.mark.asyncio
+    async def test_geographic_codelist(self) -> None:
+        async with IbestatClient() as client:
+            result = await get_codelist(client, "CL_AREA_ES53", limit=10, lang="es", _cache=SemanticCache())
+        assert result.total > 0
+        assert len(result.codes) <= 10
+
+    @pytest.mark.asyncio
+    async def test_hierarchy_present(self) -> None:
+        async with IbestatClient() as client:
+            result = await get_codelist(client, "CL_AREA_ES53", limit=100, lang="ca", _cache=SemanticCache())
+        codes_with_parents = [c for c in result.codes if c.parent_code is not None]
+        assert len(codes_with_parents) > 0
+
+
+@pytest.mark.e2e
+class TestGetDatasetInfoCodelistIdE2E:
+    @pytest.mark.asyncio
+    async def test_includes_codelist_id(self) -> None:
+        async with IbestatClient() as client:
+            result = await get_dataset_info(client, "000001A_000001", lang="ca", _cache=SemanticCache())
+        territorio = next((d for d in result.dimensions if d.id == "TERRITORIO"), None)
+        assert territorio is not None
+        assert territorio.codelist_id is not None

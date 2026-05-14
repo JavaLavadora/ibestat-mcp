@@ -12,8 +12,10 @@ This MCP server gives LLMs direct access to search, explore, and query this data
 
 | Tool | Description |
 |------|-------------|
+| `browse_topics` | Browse IBESTAT's thematic catalog (Demographics, Economy, Tourism, Labour...) |
 | `search_datasets` | Search datasets by keyword (e.g., "poblacio", "turisme") |
-| `get_dataset_info` | Get dataset dimensions and available filter values |
+| `get_dataset_info` | Get dataset dimensions, filter values, and linked codelist IDs |
+| `get_codelist` | Explore a codelist's hierarchical codes (e.g., Region > Island > Municipality) |
 | `get_data` | Fetch data rows with optional dimension filters |
 
 ## Installation
@@ -54,13 +56,17 @@ On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ## Quick Start
 
-Once configured, the LLM follows a natural three-step workflow:
+Once configured, the LLM follows a five-step workflow:
 
-1. **Search** -- "Find datasets about population" calls `search_datasets` to discover relevant datasets.
-2. **Explore** -- The LLM picks a result and calls `get_dataset_info` to see its dimensions (territory, period, sex, age group, etc.) and the values available for each.
-3. **Query** -- The LLM calls `get_data` with specific dimension filters to fetch the actual data rows.
+1. **Browse topics** -- `browse_topics` shows IBESTAT's full thematic catalog so the LLM knows what vocabulary to use.
+2. **Search** -- `search_datasets` finds datasets using terms from the topic tree (e.g., "turismo", "mercado laboral").
+3. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist.
+4. **Explore codelists** -- `get_codelist` with the `codelist_id` shows the full hierarchy (e.g., Illes Balears > Mallorca > Palma) so the LLM can discover valid filter values at any level.
+5. **Query** -- `get_data` fetches rows using the known-valid filter codes.
 
-Dimension filters require the actual codes returned by `get_dataset_info`, not human-readable labels. For example, Palma is `07040`, both sexes is `_T`, and a specific year might be `2024`. This is why the explore step matters -- it reveals the codes needed for precise queries.
+Dimension filters require the actual codes returned by `get_dataset_info` or `get_codelist`, not human-readable labels. For example, Palma is `07040`, both sexes is `_T`, and a specific year might be `2024`. Steps 3-4 reveal the codes needed for precise queries.
+
+Structural metadata (topics, codelists, DSDs) is cached in memory for the server session, so repeated calls are fast.
 
 ### Example prompts
 

@@ -18,6 +18,7 @@ from typing import Any
 import httpx
 
 BASE_URL = "https://ibestat.es/edatos/apis/statistical-resources/v1.0"
+STRUCTURAL_BASE_URL = "https://ibestat.es/edatos/apis/structural-resources/v1.0"
 TIMEOUT = 30.0
 
 
@@ -34,8 +35,13 @@ class IbestatClient:
             result = await client.search_datasets("poblaci")
     """
 
-    def __init__(self, base_url: str = BASE_URL) -> None:
+    def __init__(
+        self,
+        base_url: str = BASE_URL,
+        structural_base_url: str = STRUCTURAL_BASE_URL,
+    ) -> None:
         self._base_url = base_url
+        self._structural_base_url = structural_base_url
         self._http: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> IbestatClient:
@@ -171,4 +177,64 @@ class IbestatClient:
         return await self._get(
             f"{self._base_url}/datasets/IBESTAT/{dataset_id}/~latest",
             params=params,
+        )
+
+    # ------------------------------------------------------------------
+    # Structural-resources API
+    # ------------------------------------------------------------------
+
+    async def get_categories(self) -> dict[str, Any]:
+        """Fetch the IBESTAT thematic category tree.
+
+        Returns the full list of categories from the TEMAS_BALEARS
+        category scheme.
+
+        Returns
+        -------
+        dict[str, Any]
+            Raw API response containing ``category`` list, ``total``, etc.
+        """
+        return await self._get(
+            f"{self._structural_base_url}/categoryschemes/IBESTAT/TEMAS_BALEARS/~latest/categories",
+        )
+
+    async def get_codelist_codes(
+        self, codelist_id: str, limit: int = 100, offset: int = 0
+    ) -> dict[str, Any]:
+        """Fetch codes from a given codelist.
+
+        Parameters
+        ----------
+        codelist_id:
+            The codelist identifier (e.g. ``"CL_AREA_ES53"``).
+        limit:
+            Maximum number of codes to return (default 100).
+        offset:
+            Pagination offset (default 0).
+
+        Returns
+        -------
+        dict[str, Any]
+            Raw API response containing ``code`` list, ``total``, etc.
+        """
+        return await self._get(
+            f"{self._structural_base_url}/codelists/IBESTAT/{codelist_id}/~latest/codes",
+            params=[("limit", str(limit)), ("offset", str(offset))],
+        )
+
+    async def get_data_structure(self, dsd_id: str) -> dict[str, Any]:
+        """Fetch a Data Structure Definition (DSD).
+
+        Parameters
+        ----------
+        dsd_id:
+            The DSD identifier (e.g. ``"DSD_000001A_00001"``).
+
+        Returns
+        -------
+        dict[str, Any]
+            Raw API response with ``dataStructureComponents``, dimensions, etc.
+        """
+        return await self._get(
+            f"{self._structural_base_url}/datastructures/IBESTAT/{dsd_id}/~latest",
         )

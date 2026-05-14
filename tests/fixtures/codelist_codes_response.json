@@ -1,0 +1,41 @@
+{
+  "kind": "structuralResources#codes",
+  "total": 3,
+  "code": [
+    {
+      "id": "ES53",
+      "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Code=IBESTAT:CL_AREA_ES53(01.000).ES53",
+      "name": {
+        "text": [
+          {"value": "Illes Balears", "lang": "ca"},
+          {"value": "Islas Baleares", "lang": "es"},
+          {"value": "Balearic Islands", "lang": "en"}
+        ]
+      }
+    },
+    {
+      "id": "07",
+      "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Code=IBESTAT:CL_AREA_ES53(01.000).ES53.07",
+      "name": {
+        "text": [
+          {"value": "Mallorca", "lang": "ca"},
+          {"value": "Mallorca", "lang": "es"},
+          {"value": "Majorca", "lang": "en"}
+        ]
+      },
+      "parent": "urn:sdmx:org.sdmx.infomodel.codelist.Code=IBESTAT:CL_AREA_ES53(01.000).ES53"
+    },
+    {
+      "id": "07040",
+      "urn": "urn:sdmx:org.sdmx.infomodel.codelist.Code=IBESTAT:CL_AREA_ES53(01.000).ES53.07.07040",
+      "name": {
+        "text": [
+          {"value": "Palma de Mallorca", "lang": "ca"},
+          {"value": "Palma de Mallorca", "lang": "es"},
+          {"value": "Palma de Mallorca", "lang": "en"}
+        ]
+      },
+      "parent": "urn:sdmx:org.sdmx.infomodel.codelist.Code=IBESTAT:CL_AREA_ES53(01.000).ES53.07"
+    }
+  ]
+}

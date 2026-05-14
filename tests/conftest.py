@@ -228,6 +228,39 @@ def dataset_metadata_response() -> dict[str, Any]:
 
 
 @pytest.fixture()
+def categories_response() -> dict[str, Any]:
+    """Category tree from the IBESTAT structural-resources API.
+
+    Endpoint: GET /categoryschemes/IBESTAT/TEMAS_BALEARS/~latest/categories?_type=json
+
+    Contains 4 categories: two top-level (Demografia, Economia) and two children.
+    """
+    return _load_fixture("categories_response.json")
+
+
+@pytest.fixture()
+def codelist_codes_response() -> dict[str, Any]:
+    """Codes from the CL_AREA_ES53 codelist (territory codes).
+
+    Endpoint: GET /codelists/IBESTAT/CL_AREA_ES53/~latest/codes?_type=json
+
+    Contains 3 codes: Illes Balears (root), Mallorca, Palma.
+    """
+    return _load_fixture("codelist_codes_response.json")
+
+
+@pytest.fixture()
+def data_structure_response() -> dict[str, Any]:
+    """Data Structure Definition for the municipal population dataset.
+
+    Endpoint: GET /datastructures/IBESTAT/DSD_000001A_00001/~latest?_type=json
+
+    Dimensions: TERRITORIO, TIME_PERIOD, SEXO, MEDIDAS.
+    """
+    return _load_fixture("data_structure_response.json")
+
+
+@pytest.fixture()
 def dataset_data_response() -> dict[str, Any]:
     """Filtered dataset response (data only, no metadata section).
 
