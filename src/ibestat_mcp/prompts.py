@@ -12,16 +12,18 @@ from __future__ import annotations
 def explore_topic(topic: str, language: str = "ca") -> str:
     """Seed a full exploration of an IBESTAT statistical topic."""
     return (
-        f"The user wants to explore '{topic}' data from IBESTAT, the official "
-        f"statistics office of the Balearic Islands (Mallorca, Menorca, Ibiza, "
-        f"Formentera). IBESTAT publishes ~3,700 datasets across 52 thematic "
-        f"categories covering demographics, economy, tourism, labour, and more. "
+        f"The user wants to explore '{topic}' data from IBESTAT, "
+        f"the official statistics office of the Balearic Islands "
+        f"(Mallorca, Menorca, Ibiza, Formentera). IBESTAT publishes "
+        f"~3,700 datasets across 52 thematic categories covering "
+        f"demographics, economy, tourism, labour, and more. "
         f"Use language='{language}' for all tool calls. "
         f"Available tools: browse_topics (thematic catalogue), "
         f"list_datasets_by_topic (datasets under a category), "
-        f"search_datasets (keyword search), get_dataset_info (dimensions and "
-        f"codelist references), get_codelist (hierarchical code values), "
-        f"and get_data (fetch observations with filters)."
+        f"search_datasets (keyword search), get_dataset_info "
+        f"(dimensions and codelist references), get_codelist "
+        f"(hierarchical code values), and get_data "
+        f"(fetch observations with filters)."
     )
 
 
@@ -47,7 +49,10 @@ def compare_municipalities(
     municipalities_note = (
         f"The user is interested in comparing: {municipalities}. "
         if municipalities
-        else "The user hasn't specified which municipalities yet -- help them choose. "
+        else (
+            "The user hasn't specified which municipalities "
+            "yet -- help them choose. "
+        )
     )
     return (
         f"The user wants to compare '{topic}' data across municipalities in "
@@ -69,7 +74,10 @@ def time_series(
     years_note = (
         f"The user wants data for the period {years}. "
         if years
-        else "The user hasn't specified a time range -- help them discover what's available. "
+        else (
+            "The user hasn't specified a time range "
+            "-- help them discover what's available. "
+        )
     )
     return (
         f"The user wants to see trends over time for '{topic}' data from "
