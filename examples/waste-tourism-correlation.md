@@ -69,13 +69,17 @@ The LLM aligns the two time series for 2016-2021:
 
 ## The insight
 
-The correlation is striking:
+![Waste per Capita vs Tourist Arrivals — Illes Balears](waste-tourism-correlation.png)
+
+**Pearson r = 0.95 (p = 0.003)** — a very strong positive correlation. With only 6 data points this is not proof of causation, but the strength of the signal (and the natural experiment of 2020) makes the relationship hard to dismiss.
 
 - **2018**: Peak tourism (16.55M visitors) coincides with peak waste generation (828.8 kg/capita) — the highest in the series.
 - **2020**: The COVID-19 pandemic collapses tourism by 81% (16.48M to 3.11M). Waste drops 25% in the same year.
 - **2021**: Partial tourism recovery (8.68M, +179% vs 2020) tracks a partial waste recovery (605.0 kg/capita, +6.5%).
 
 The pattern is clear: tourist arrivals are a significant driver of per-capita waste in the Balearic Islands. The pandemic created a natural experiment — when tourists stopped coming, waste generation fell sharply, even though the resident population stayed roughly constant.
+
+> **Note on data range:** The overlap period is 2016–2021 because IBESTAT's waste per capita dataset (`000238A_000078`) has not been updated beyond 2021, while the tourism dataset (`000058A_000001`) starts annual aggregates from 2016. This is a data-source limitation, not an MCP limitation.
 
 ## What made this possible
 
