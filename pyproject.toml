@@ -7,6 +7,7 @@ name = "ibestat-mcp"
 version = "0.1.0"
 description = "MCP server for IBESTAT (Institut d'Estadistica de les Illes Balears) eDades API"
 license = "MIT"
+readme = "README.md"
 authors = [{name = "Antonio de Padua Díaz Martínez"}]
 keywords = ["mcp", "ibestat", "statistics", "balearic-islands", "llm"]
 classifiers = [
@@ -31,6 +32,10 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "respx>=0.21.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/JavaLavadora/ibestat-mcp"
+Repository = "https://github.com/JavaLavadora/ibestat-mcp"
 
 [project.scripts]
 ibestat-mcp = "ibestat_mcp.server:main"

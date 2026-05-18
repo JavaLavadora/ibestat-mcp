@@ -35,7 +35,9 @@ cd ibestat-mcp
 pip install -e ".[dev]"
 ```
 
-## Configuration (Claude Desktop)
+## Configuration
+
+### Claude Desktop
 
 Add this to your Claude Desktop configuration file (`claude_desktop_config.json`):
 
@@ -54,6 +56,26 @@ On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 On Linux: `~/.config/Claude/claude_desktop_config.json`
 
 On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+### Claude Code (CLI)
+
+Add the server to your project settings (`.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "ibestat": {
+      "command": "ibestat-mcp"
+    }
+  }
+}
+```
+
+Or add it via the CLI:
+
+```bash
+claude mcp add ibestat -- ibestat-mcp
+```
 
 ## Quick Start
 
@@ -80,9 +102,23 @@ Try asking your LLM:
 - "What are the latest housing price trends in the Balearic Islands?"
 - "How many tourists visited Ibiza last year?"
 
+## MCP Prompts
+
+The server includes five MCP prompts that help LLMs navigate IBESTAT data without requiring users to know the tool workflow. Prompts provide lightweight context and let the LLM decide the best tool sequence.
+
+| Prompt | Description | Required args |
+|--------|-------------|---------------|
+| `explore_topic` | Explore a statistical topic end-to-end | `topic` |
+| `query_dataset` | Query a specific dataset by ID | `dataset_id` |
+| `compare_municipalities` | Compare data across Balearic municipalities | `topic` |
+| `time_series` | Show trends over time | `topic` |
+| `discover_available_data` | Onboarding: what data does IBESTAT have? | *(none)* |
+
+All prompts accept an optional `language` argument (`ca`, `es`, or `en`, default `ca`).
+
 ## Data Language Note
 
-All three tools accept a `language` parameter that controls the language of returned data labels. Supported values:
+All six tools accept a `language` parameter that controls the language of returned data labels. Supported values:
 
 - `ca` -- Catalan (default). Labels like "Territori", "Poblacio".
 - `es` -- Spanish. Labels like "Territorio", "Poblacion".

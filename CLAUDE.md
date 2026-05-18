@@ -52,8 +52,9 @@ pytest                # all
 
 ```
 src/ibestat_mcp/
-  server.py            — MCP server setup, tool registration, stdio entry point
+  server.py            — MCP server setup, tool + prompt registration, stdio entry point
   tools.py             — tool functions wiring client + parser + cache
+  prompts.py           — MCP prompt functions for guided data exploration
   client.py            — async HTTP client for IBESTAT eDades API (statistical + structural)
   parser.py            — JSON-stat response parsing
   structural_parser.py — structural-resources API response parsing
@@ -89,3 +90,13 @@ Structural data (topics, codelists, DSDs) is cached in memory for the server ses
 | `get_dataset_info` | Dataset dimensions + codelist references | DSD mapping cached per dataset |
 | `get_codelist` | Hierarchical codes for a codelist | Yes -- per codelist |
 | `get_data` | Fetch observation data with filters | No |
+
+### Prompt inventory
+
+| Prompt | Purpose | Required args |
+|--------|---------|---------------|
+| `explore_topic` | Full topic exploration workflow | `topic` |
+| `query_dataset` | Query a known dataset by ID | `dataset_id` |
+| `compare_municipalities` | Compare data across municipalities | `topic` |
+| `time_series` | Trend analysis over time | `topic` |
+| `discover_available_data` | Onboarding for first-time users | *(none)* |
