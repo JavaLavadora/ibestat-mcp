@@ -1,6 +1,6 @@
 """MCP server for the IBESTAT eDades statistical-resources API.
 
-Registers six tools and exposes them via stdio transport.
+Registers six tools and five prompts, exposed via stdio transport.
 
 Usage::
 
@@ -20,15 +20,16 @@ from mcp.server.fastmcp import FastMCP
 from pydantic import Field
 
 from ibestat_mcp.client import IbestatClient, IbestatError
+from ibestat_mcp import prompts as prompt_functions
 from ibestat_mcp import tools as tool_functions
 
 
 def create_server() -> FastMCP:
     """Create and configure the IBESTAT MCP server.
 
-    Returns a fully configured FastMCP instance with all three tools
-    registered.  This factory function exists for testability -- tests
-    can call it directly without starting the stdio transport.
+    Returns a fully configured FastMCP instance with six tools and five
+    prompts registered.  This factory function exists for testability --
+    tests can call it directly without starting the stdio transport.
     """
     mcp = FastMCP("ibestat")
 
@@ -284,6 +285,114 @@ def create_server() -> FastMCP:
             return json.dumps(result.model_dump(), ensure_ascii=False)
         except IbestatError as e:
             return json.dumps({"error": str(e)}, ensure_ascii=False)
+
+    # -----------------------------------------------------------------
+    # Prompt registration
+    # -----------------------------------------------------------------
+
+    @mcp.prompt(
+        name="explore_topic",
+        description=(
+            "Explore a statistical topic from IBESTAT's catalogue. "
+            "Seeds a full discovery workflow: browse topics, list datasets, "
+            "inspect dimensions, explore codelists, and fetch data."
+        ),
+    )
+    def explore_topic(
+        topic: Annotated[
+            str,
+            Field(description="Statistical topic to explore (e.g. 'tourism', 'population')."),
+        ],
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for data labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        return prompt_functions.explore_topic(topic, language)
+
+    @mcp.prompt(
+        name="query_dataset",
+        description=(
+            "Query a specific IBESTAT dataset by its ID. "
+            "For users who already know which dataset they want. "
+            "Guides inspection of dimensions, codelist lookup, and data retrieval."
+        ),
+    )
+    def query_dataset(
+        dataset_id: Annotated[
+            str,
+            Field(description="Dataset identifier (e.g. '000001A_000001')."),
+        ],
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for data labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        return prompt_functions.query_dataset(dataset_id, language)
+
+    @mcp.prompt(
+        name="compare_municipalities",
+        description=(
+            "Compare data across Balearic Islands municipalities. "
+            "Provides context about IBESTAT's geographic codelist hierarchy "
+            "(region > island > municipality) and how to resolve place names to codes."
+        ),
+    )
+    def compare_municipalities(
+        topic: Annotated[
+            str,
+            Field(description="Statistical topic to compare (e.g. 'population', 'employment')."),
+        ],
+        municipalities: Annotated[
+            str | None,
+            Field(description="Comma-separated municipality names (e.g. 'Palma, Ibiza'). Optional."),
+        ] = None,
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for data labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        return prompt_functions.compare_municipalities(topic, municipalities, language)
+
+    @mcp.prompt(
+        name="time_series",
+        description=(
+            "Show trends over time for an IBESTAT statistical topic. "
+            "Provides context about the TIME_PERIOD dimension and how to "
+            "filter by year ranges."
+        ),
+    )
+    def time_series(
+        topic: Annotated[
+            str,
+            Field(description="Statistical topic to analyse over time (e.g. 'tourism', 'housing prices')."),
+        ],
+        years: Annotated[
+            str | None,
+            Field(description="Year range (e.g. '2020-2024'). Optional."),
+        ] = None,
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for data labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        return prompt_functions.time_series(topic, years, language)
+
+    @mcp.prompt(
+        name="discover_available_data",
+        description=(
+            "Discover what data IBESTAT has available. "
+            "Onboarding prompt for first-time users who want to learn what "
+            "statistical data the Balearic Islands statistics office publishes."
+        ),
+    )
+    def discover_available_data(
+        language: Annotated[
+            Literal["ca", "es", "en"],
+            Field(description="Language for data labels. Default: 'ca'."),
+        ] = "ca",
+    ) -> str:
+        return prompt_functions.discover_available_data(language)
 
     return mcp
 
