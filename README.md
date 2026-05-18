@@ -1,17 +1,29 @@
 # ibestat-mcp
 
+> **English** | [Català](README.ca.md) | [Español](README.es.md)
+
 An MCP server that gives LLMs analytical access to 3,730+ public datasets from the Balearic Islands — tourism, population, economy, housing, environment, and more.
 
 Built on [IBESTAT](https://ibestat.es)'s eDades API. Designed for [Claude Desktop](https://claude.ai), [Claude Code](https://claude.com/claude-code), and any MCP-compatible client.
 
-## Why not just call the API directly?
+## Table of contents
 
-IBESTAT's eDades API is powerful but opaque. It serves JSON-stat over REST with numeric codes, nested hierarchies, and no search — you need to already know what you're looking for.
+- [From raw data to insight](#from-raw-data-to-insight)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Tools](#tools)
+- [MCP Prompts](#mcp-prompts)
+- [Data Language Note](#data-language-note)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [License](#license)
 
-This MCP server adds a **semantic layer** that turns the raw API into something an LLM can reason with:
+## From raw data to insight
 
-| Challenge with the raw API | What ibestat-mcp does |
-|---|---|
+The eDades API exposes powerful statistical data — but navigating it requires dataset IDs, cryptic codes, and multiple endpoints. ibestat-mcp bridges that gap:
+
+| Raw API | ibestat-mcp |
+|---------|-------------|
 | No browsable catalog — you need dataset IDs upfront | **Topic tree** with 52 thematic categories the LLM can browse |
 | Dimension codes are cryptic (`07040`, `_T`, `A`) | **Codelist exploration** reveals what codes mean and how they're structured |
 | Filtering requires exact dimension IDs and value codes | **Dataset inspection** exposes dimensions, valid values, and codelist references |
@@ -20,55 +32,7 @@ This MCP server adds a **semantic layer** that turns the raw API into something 
 
 The result: an LLM can go from a plain-language question to a data-backed answer in a single conversation — without the user knowing a single dataset ID or API endpoint.
 
-### Real-world example: Does tourism drive waste?
-
-A user asks: *"Is there a correlation between tourist arrivals and waste generation in the Balearic Islands?"*
-
-The LLM browses topics, finds the waste dataset under "Territori i medi ambient", searches for tourism data, inspects both datasets' dimensions, retrieves filtered time series, and cross-references them:
-
-| Year | Waste (kg/capita) | Tourists (millions) |
-|------|-------------------|---------------------|
-| 2018 | 828.8 | 16.55 |
-| 2019 | 757.9 | 16.48 |
-| 2020 | 568.3 | 3.11 |
-| 2021 | 605.0 | 8.68 |
-
-Peak tourism = peak waste. The 2020 pandemic collapse (-81% tourists) triggered a 25% drop in waste — a natural experiment proving the link.
-
-This required six tool calls across two datasets. No API docs consulted. No dataset IDs memorized.
-
-[Full worked example with all steps](examples/waste-tourism-correlation.md)
-
-## Architecture
-
-```mermaid
-graph LR
-    User["User (natural language)"]
-    LLM["LLM"]
-
-    subgraph MCP["ibestat-mcp"]
-        direction TB
-        Topics["Topic Browser<br/><i>52 categories</i>"]
-        Search["Dataset Search<br/><i>keyword + browse</i>"]
-        Inspect["Metadata Inspector<br/><i>dimensions, codelists</i>"]
-        Query["Data Query<br/><i>filtered observations</i>"]
-        Cache["Semantic Cache<br/><i>topics, DSDs, codelists</i>"]
-    end
-
-    API["IBESTAT eDades API<br/><i>3,730+ datasets<br/>JSON-stat / SDMX</i>"]
-
-    User -->|"question"| LLM
-    LLM -->|"tool calls"| MCP
-    MCP -->|"HTTP + caching"| API
-    MCP -->|"structured results"| LLM
-    LLM -->|"analysis"| User
-
-    style MCP fill:#f0f4ff,stroke:#3b82f6,stroke-width:2px
-    style Cache fill:#dbeafe,stroke:#3b82f6
-    style API fill:#fef3c7,stroke:#d97706
-```
-
-The semantic layer (blue) sits between the LLM and the raw API. It provides discovery, exploration, and caching so the LLM can navigate data autonomously. Structural metadata is fetched once and cached for the session.
+See it in action: [Does tourism drive waste in the Balearic Islands?](examples/waste-tourism-correlation.md) — a worked example where the LLM cross-references two independent datasets to uncover a strong correlation (Pearson r = 0.95).
 
 ## Installation
 
