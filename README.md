@@ -1,27 +1,78 @@
 # ibestat-mcp
 
-MCP server for querying Balearic Islands public statistics via IBESTAT's eDades API.
+An MCP server that gives LLMs analytical access to 3,730+ public datasets from the Balearic Islands — tourism, population, economy, housing, environment, and more.
 
-## What is IBESTAT?
+Built on [IBESTAT](https://ibestat.es)'s eDades API. Designed for [Claude Desktop](https://claude.ai), [Claude Code](https://claude.com/claude-code), and any MCP-compatible client.
 
-[IBESTAT](https://ibestat.es) (Institut d'Estadistica de les Illes Balears) is the official statistics office for the Balearic Islands (Mallorca, Menorca, Ibiza, Formentera). Their eDades API provides access to approximately 3,730 datasets covering population, tourism, employment, housing, economy, and more.
+## Why not just call the API directly?
 
-This MCP server gives LLMs direct access to search, explore, and query this data.
+IBESTAT's eDades API is powerful but opaque. It serves JSON-stat over REST with numeric codes, nested hierarchies, and no search — you need to already know what you're looking for.
 
-## Tools
+This MCP server adds a **semantic layer** that turns the raw API into something an LLM can reason with:
 
-| Tool | Description |
-|------|-------------|
-| `browse_topics` | Browse IBESTAT's thematic catalog (Demographics, Economy, Tourism, Labour...) |
-| `list_datasets_by_topic` | List all datasets under a category — no keyword guessing needed |
-| `search_datasets` | Search datasets by keyword (e.g., "poblacio", "turisme") |
-| `get_dataset_info` | Get dataset dimensions, filter values, and linked codelist IDs |
-| `get_codelist` | Explore a codelist's hierarchical codes (e.g., Region > Island > Municipality) |
-| `get_data` | Fetch data rows with optional dimension filters |
+| Challenge with the raw API | What ibestat-mcp does |
+|---|---|
+| No browsable catalog — you need dataset IDs upfront | **Topic tree** with 52 thematic categories the LLM can browse |
+| Dimension codes are cryptic (`07040`, `_T`, `A`) | **Codelist exploration** reveals what codes mean and how they're structured |
+| Filtering requires exact dimension IDs and value codes | **Dataset inspection** exposes dimensions, valid values, and codelist references |
+| No way to discover related datasets | **Cross-dataset discovery** through shared topics and keyword search |
+| Structural metadata requires separate API calls | **Automatic caching** of topics, codelists, and data structure definitions |
+
+The result: an LLM can go from a plain-language question to a data-backed answer in a single conversation — without the user knowing a single dataset ID or API endpoint.
+
+### Real-world example: Does tourism drive waste?
+
+A user asks: *"Is there a correlation between tourist arrivals and waste generation in the Balearic Islands?"*
+
+The LLM browses topics, finds the waste dataset under "Territori i medi ambient", searches for tourism data, inspects both datasets' dimensions, retrieves filtered time series, and cross-references them:
+
+| Year | Waste (kg/capita) | Tourists (millions) |
+|------|-------------------|---------------------|
+| 2018 | 828.8 | 16.55 |
+| 2019 | 757.9 | 16.48 |
+| 2020 | 568.3 | 3.11 |
+| 2021 | 605.0 | 8.68 |
+
+Peak tourism = peak waste. The 2020 pandemic collapse (-81% tourists) triggered a 25% drop in waste — a natural experiment proving the link.
+
+This required six tool calls across two datasets. No API docs consulted. No dataset IDs memorized.
+
+[Full worked example with all steps](examples/waste-tourism-correlation.md)
+
+## Architecture
+
+```mermaid
+graph LR
+    User["User (natural language)"]
+    LLM["LLM"]
+
+    subgraph MCP["ibestat-mcp"]
+        direction TB
+        Topics["Topic Browser<br/><i>52 categories</i>"]
+        Search["Dataset Search<br/><i>keyword + browse</i>"]
+        Inspect["Metadata Inspector<br/><i>dimensions, codelists</i>"]
+        Query["Data Query<br/><i>filtered observations</i>"]
+        Cache["Semantic Cache<br/><i>topics, DSDs, codelists</i>"]
+    end
+
+    API["IBESTAT eDades API<br/><i>3,730+ datasets<br/>JSON-stat / SDMX</i>"]
+
+    User -->|"question"| LLM
+    LLM -->|"tool calls"| MCP
+    MCP -->|"HTTP + caching"| API
+    MCP -->|"structured results"| LLM
+    LLM -->|"analysis"| User
+
+    style MCP fill:#f0f4ff,stroke:#3b82f6,stroke-width:2px
+    style Cache fill:#dbeafe,stroke:#3b82f6
+    style API fill:#fef3c7,stroke:#d97706
+```
+
+The semantic layer (blue) sits between the LLM and the raw API. It provides discovery, exploration, and caching so the LLM can navigate data autonomously. Structural metadata is fetched once and cached for the session.
 
 ## Installation
 
-The package is not yet published on PyPI. Install directly from GitHub:
+Not yet on PyPI. Install directly from GitHub:
 
 ```bash
 pip install git+https://github.com/JavaLavadora/ibestat-mcp.git
@@ -39,7 +90,7 @@ pip install -e ".[dev]"
 
 ### Claude Desktop
 
-Add this to your Claude Desktop configuration file (`claude_desktop_config.json`):
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
@@ -51,15 +102,14 @@ Add this to your Claude Desktop configuration file (`claude_desktop_config.json`
 }
 ```
 
-On macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-On Linux: `~/.config/Claude/claude_desktop_config.json`
-
-On Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+Config file location:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ### Claude Code (CLI)
 
-Add the server to your project settings (`.claude/settings.json`):
+Add to your project settings (`.claude/settings.json`):
 
 ```json
 {
@@ -71,26 +121,31 @@ Add the server to your project settings (`.claude/settings.json`):
 }
 ```
 
-Or add it via the CLI:
+Or via the CLI:
 
 ```bash
 claude mcp add ibestat -- ibestat-mcp
 ```
 
-## Quick Start
+## Tools
 
-Once configured, the LLM follows a six-step workflow:
+| Tool | Description | Cached |
+|------|-------------|--------|
+| `browse_topics` | Browse IBESTAT's thematic catalog (52 categories) | Yes |
+| `list_datasets_by_topic` | List all datasets under a category | Yes |
+| `search_datasets` | Search datasets by keyword | No |
+| `get_dataset_info` | Get dataset dimensions, filter values, and codelist IDs | DSD cached |
+| `get_codelist` | Explore hierarchical codes (e.g., Region > Island > Municipality) | Yes |
+| `get_data` | Fetch data rows with optional dimension filters | No |
 
-1. **Browse topics** -- `browse_topics` shows IBESTAT's full thematic catalog so the LLM knows what domains exist.
-2. **List datasets** -- `list_datasets_by_topic` shows all datasets under a chosen category. First call may take a few seconds (multiple API endpoints are queried and cached); subsequent calls are instant.
-3. **Search** -- *(Alternative)* `search_datasets` finds datasets via free-text keyword search when you already know what to look for.
-4. **Inspect** -- `get_dataset_info` reveals dimensions, their values, and a `codelist_id` for each dimension that has a hierarchical codelist. `codelist_id` allows to gather context for the dimension using the APIs internal semantic conventions.
-5. **Explore codelists** -- `get_codelist` with the `codelist_id` shows the full hierarchy (e.g., Illes Balears > Mallorca > Palma) so the LLM can discover valid filter values at any level.
-6. **Query** -- `get_data` fetches rows using the known-valid filter codes.
+### Recommended workflow
 
-Dimension filters require the actual codes returned by `get_dataset_info` or `get_codelist`, not human-readable labels. For example, Palma is `07040`, both sexes is `_T`, and a specific year might be `2024`. Steps 3-4 reveal the codes needed for precise queries.
-
-Structural metadata (topics, codelists, DSDs) is cached in memory for the server session, so repeated calls are fast.
+1. **Browse** -- `browse_topics` to see what domains IBESTAT covers
+2. **List** -- `list_datasets_by_topic` to find datasets in a category
+3. **Search** -- *(alternative)* `search_datasets` when you already know what to look for
+4. **Inspect** -- `get_dataset_info` to understand dimensions and get codelist IDs
+5. **Explore** -- `get_codelist` to discover valid filter values at all hierarchy levels
+6. **Query** -- `get_data` with precise filters from the previous steps
 
 ### Example prompts
 
@@ -104,7 +159,7 @@ Try asking your LLM:
 
 ## MCP Prompts
 
-The server includes five MCP prompts that help LLMs navigate IBESTAT data without requiring users to know the tool workflow. Prompts provide lightweight context and let the LLM decide the best tool sequence.
+Five built-in prompts help LLMs navigate IBESTAT data without requiring users to know the tool workflow:
 
 | Prompt | Description | Required args |
 |--------|-------------|---------------|
@@ -118,15 +173,13 @@ All prompts accept an optional `language` argument (`ca`, `es`, or `en`, default
 
 ## Data Language Note
 
-All six tools accept a `language` parameter that controls the language of returned data labels. Supported values:
+All tools accept a `language` parameter:
 
 - `ca` -- Catalan (default). Labels like "Territori", "Poblacio".
 - `es` -- Spanish. Labels like "Territorio", "Poblacion".
 - `en` -- English. Labels like "Reference area", "Population".
 
-The LLM will typically pick the right language based on the user's conversation language.
-
-Search queries work best in Catalan or Spanish since dataset names are stored in those languages. For example, use "poblacio" (not "population"), "turisme" (not "tourism"), "ocupacio" (not "employment").
+Search works best in Catalan or Spanish since dataset names are stored in those languages. Use `poblacio` not "population", `turisme` not "tourism".
 
 ## Troubleshooting
 
@@ -146,7 +199,7 @@ The dataset ID may be wrong or the dataset may have been retired. Use `search_da
 Filters require dimension IDs (`TIME_PERIOD`, `TERRITORIO`) and value codes (`07040`, `_T`), not human-readable labels. Use the `id` and `code` fields from `get_dataset_info`, not `name` or `label`.
 
 **Column names and values are not in English**
-The server returns labels in Catalan by default (e.g., "Territori", "Periode"). Set the `language` parameter to `es` for Spanish or `en` for English. LLMs interpret these labels naturally in conversation.
+The server returns labels in Catalan by default. Set the `language` parameter to `es` for Spanish or `en` for English.
 
 ## Development
 
