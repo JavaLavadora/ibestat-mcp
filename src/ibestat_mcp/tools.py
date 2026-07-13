@@ -162,7 +162,7 @@ async def get_data(
         columns.
     """
     response = await client.get_dataset_data(dataset_id, filters=filters)
-    return parse_observations(response, lang)
+    return parse_observations(response, lang, filters=filters)
 
 
 async def browse_topics(
