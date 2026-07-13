@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ssl
 import urllib.parse
 from typing import Any
 
@@ -292,6 +293,70 @@ class TestContextManager:
         custom_url = "https://custom.example.com/api/v1"
         client = IbestatClient(base_url=custom_url)
         assert client._base_url == custom_url
+
+
+# ===========================================================================
+# TestResolveSslVerify
+# ===========================================================================
+
+
+class TestResolveSslVerify:
+    """_resolve_ssl_verify lets a custom CA bundle be configured via env vars.
+
+    Behind a TLS-inspecting corporate proxy (or a sandboxed dev environment
+    with its own intercepting root CA), httpx's default certifi bundle
+    fails verification even though curl/OpenSSL accept the connection via
+    the system trust store. These tests guard the env-var override that
+    fixes that without changing default behaviour.
+    """
+
+    @pytest.mark.parametrize(
+        "env_var",
+        ["SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE", "NODE_EXTRA_CA_CERTS"],
+    )
+    def test_returns_ssl_context_when_env_var_set(
+        self, monkeypatch: pytest.MonkeyPatch, env_var: str
+    ) -> None:
+        """Each supported env var, if set, yields an SSLContext (not a bare str)."""
+        from ibestat_mcp.client import _resolve_ssl_verify
+
+        monkeypatch.setenv(env_var, certifi_bundle_path())
+        result = _resolve_ssl_verify()
+        assert isinstance(result, ssl.SSLContext)
+
+    def test_returns_true_when_no_env_var_set(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """With none of the supported env vars set, default certifi verification applies."""
+        from ibestat_mcp.client import _resolve_ssl_verify
+
+        for env_var in (
+            "SSL_CERT_FILE",
+            "REQUESTS_CA_BUNDLE",
+            "CURL_CA_BUNDLE",
+            "NODE_EXTRA_CA_CERTS",
+        ):
+            monkeypatch.delenv(env_var, raising=False)
+        assert _resolve_ssl_verify() is True
+
+    def test_priority_order(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """SSL_CERT_FILE takes priority over the other env vars."""
+        from ibestat_mcp.client import _resolve_ssl_verify
+
+        bundle = certifi_bundle_path()
+        monkeypatch.setenv("SSL_CERT_FILE", bundle)
+        monkeypatch.setenv("NODE_EXTRA_CA_CERTS", "/does/not/exist.pem")
+        # Should not raise even though NODE_EXTRA_CA_CERTS points nowhere,
+        # because SSL_CERT_FILE (a valid file) is checked first.
+        result = _resolve_ssl_verify()
+        assert isinstance(result, ssl.SSLContext)
+
+
+def certifi_bundle_path() -> str:
+    """Return a real, existing PEM file path to use as a stand-in CA bundle."""
+    import certifi
+
+    return certifi.where()
 
 
 # ===========================================================================
