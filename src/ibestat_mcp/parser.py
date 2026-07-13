@@ -60,7 +60,9 @@ def _parse_observation_value(raw: str) -> int | float | None:
 
 
 def parse_observations(
-    response: dict[str, Any], lang: str = "ca"
+    response: dict[str, Any],
+    lang: str = "ca",
+    filters: dict[str, str | list[str]] | None = None,
 ) -> list[dict[str, Any]]:
     """Flatten a dataset response into a list of row dictionaries.
 
@@ -68,18 +70,38 @@ def parse_observations(
     of appearing as row values.  All column names and labels are accent-
     stripped localized text.
 
+    IBESTAT's eDades API only honours the *first* ``dim=<id>:<value>`` query
+    parameter server-side: any additional requested filter dimensions are
+    silently ignored and the response comes back with the full code range
+    for those dimensions instead of just the requested value. Since this
+    function already walks every dimension combination and has access to
+    each dimension's raw (unlocalized) code, ``filters`` lets it re-apply the
+    originally-requested filter set against those raw codes, dropping rows
+    for any dimension the API failed to narrow down.
+
     Parameters
     ----------
     response:
         A full dataset response with both ``metadata`` and ``data`` sections.
     lang:
         Language code for labels (``"ca"``, ``"es"``, or ``"en"``).
+    filters:
+        Optional ``{dim_id: value_or_values}`` filters that were requested
+        when fetching ``response``. Rows whose raw dimension code doesn't
+        match are dropped client-side, to work around the API only honouring
+        the first ``dim`` filter it receives. ``None`` (the default)
+        preserves the old behaviour of returning every row in the response.
 
     Returns
     -------
     list[dict[str, Any]]
         Flat row dictionaries ready for tabular display.
     """
+    normalized_filters: dict[str, set[str]] = {
+        dim_id: (set(v) if isinstance(v, list) else {v})
+        for dim_id, v in (filters or {}).items()
+    }
+
     # ------------------------------------------------------------------
     # 1. Build label lookup from metadata
     # ------------------------------------------------------------------
@@ -189,12 +211,19 @@ def parse_observations(
 
             # Build the row dict with dimension labels
             row: dict[str, Any] = {}
+            skip_row = False
             for k, nm_idx in enumerate(non_medidas_indices):
                 dim_id = dim_ids[nm_idx]
                 code = dim_codes[nm_idx][multi_idx_non_medidas[k]]
+                if dim_id in normalized_filters and code not in normalized_filters[dim_id]:
+                    skip_row = True
+                    break
                 col_name = dim_name_lookup.get(dim_id, dim_id)
                 val_label = label_lookup.get(dim_id, {}).get(code, code)
                 row[col_name] = val_label
+
+            if skip_row:
+                continue
 
             # Now add MEDIDAS columns
             for m_local_idx in range(medidas_size):
@@ -221,14 +250,20 @@ def parse_observations(
         for flat_idx in range(total):
             remaining = flat_idx
             row = {}
+            skip_row = False
             for i in range(n_dims):
                 idx = remaining // strides[i]
                 remaining %= strides[i]
                 dim_id = dim_ids[i]
                 code = dim_codes[i][idx]
+                if dim_id in normalized_filters and code not in normalized_filters[dim_id]:
+                    skip_row = True
+                    break
                 col_name = dim_name_lookup.get(dim_id, dim_id)
                 val_label = label_lookup.get(dim_id, {}).get(code, code)
                 row[col_name] = val_label
+            if skip_row:
+                continue
             row["value"] = obs_values[flat_idx]
             rows.append(row)
         return rows

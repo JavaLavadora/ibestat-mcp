@@ -506,6 +506,126 @@ class TestParseObservations:
         assert rows[0]["Taxa"] == -0.97
 
 
+class TestParseObservationsFilters:
+    """The eDades API only honours the first `dim` filter server-side, so
+    parse_observations must re-apply the full requested filter set against
+    the raw (unlocalized) codes to correctly narrow down any dimensions the
+    API silently ignored.
+    """
+
+    def _build_ignored_second_filter_response(self) -> dict[str, Any]:
+        """TERRITORIO(2) x SEXO(3) x MEDIDAS(1), simulating the server
+        having honoured only the TERRITORIO filter and ignored SEXO -- the
+        raw data section contains the full cartesian product for both.
+        """
+        return _build_response(
+            meta_dims=[
+                _meta_dimension(
+                    "TERRITORIO",
+                    "Territori",
+                    [_dim_value("ES53", "Illes Balears"), _dim_value("ES52", "Comunitat Valenciana")],
+                    dim_type="GEOGRAPHIC_DIMENSION",
+                ),
+                _meta_dimension(
+                    "SEXO",
+                    "Sexe",
+                    [
+                        _dim_value("_T", "Total"),
+                        _dim_value("H", "Homes"),
+                        _dim_value("M", "Dones"),
+                    ],
+                ),
+                _meta_dimension(
+                    "MEDIDAS",
+                    "Indicador",
+                    [_dim_value("POP", "Poblacio")],
+                    dim_type="MEASURE_DIMENSION",
+                ),
+            ],
+            data_dims=[
+                _data_dimension("TERRITORIO", ["ES53", "ES52"]),
+                _data_dimension("SEXO", ["_T", "H", "M"]),
+                _data_dimension("MEDIDAS", ["POP"]),
+            ],
+            # Row-major, MEDIDAS varies fastest (only 1 value here), then SEXO,
+            # then TERRITORIO:
+            # ES53/_T, ES53/H, ES53/M, ES52/_T, ES52/H, ES52/M
+            observations="100 | 50 | 50 | 900 | 450 | 450",
+        )
+
+    def test_single_value_filters_narrow_down_ignored_dimensions(self):
+        response = self._build_ignored_second_filter_response()
+        rows = parse_observations(
+            response, lang="ca", filters={"TERRITORIO": "ES53", "SEXO": "_T"}
+        )
+        assert len(rows) == 1
+        assert rows[0] == {"Territori": "Illes Balears", "Sexe": "Total", "Poblacio": 100}
+
+    def test_no_filters_returns_full_unfiltered_set(self):
+        """Backward compatibility: callers that don't pass filters still get
+        every row the API returned."""
+        response = self._build_ignored_second_filter_response()
+        rows = parse_observations(response, lang="ca")
+        assert len(rows) == 6
+
+    def test_list_valued_filter_matches_any_of_the_values(self):
+        response = self._build_ignored_second_filter_response()
+        rows = parse_observations(
+            response,
+            lang="ca",
+            filters={"TERRITORIO": "ES53", "SEXO": ["_T", "H"]},
+        )
+        assert len(rows) == 2
+        sexes = {row["Sexe"] for row in rows}
+        assert sexes == {"Total", "Homes"}
+        assert all(row["Territori"] == "Illes Balears" for row in rows)
+
+    def test_filters_apply_without_medidas_dimension(self):
+        """Same re-narrowing logic must also work for datasets with no
+        MEDIDAS dimension (the plain 'value' column branch)."""
+        response = {
+            "metadata": {
+                "dimensions": {
+                    "dimension": [
+                        {
+                            "id": "TERRITORIO",
+                            "name": {"text": [{"value": "Territori", "lang": "ca"}]},
+                            "type": "GEOGRAPHIC_DIMENSION",
+                            "dimensionValues": {
+                                "value": [
+                                    {"id": "07001", "name": {"text": [{"value": "Alaro", "lang": "ca"}]}},
+                                    {"id": "07002", "name": {"text": [{"value": "Alcudia", "lang": "ca"}]}},
+                                ],
+                                "total": 2,
+                            },
+                        },
+                    ]
+                }
+            },
+            "data": {
+                "dimensions": {
+                    "dimension": [
+                        {
+                            "dimensionId": "TERRITORIO",
+                            "type": "GEOGRAPHIC_DIMENSION",
+                            "representations": {
+                                "representation": [
+                                    {"code": "07001", "index": 0},
+                                    {"code": "07002", "index": 1},
+                                ],
+                                "total": 2,
+                            },
+                        },
+                    ]
+                },
+                "observations": "500 | 1000",
+            },
+        }
+        rows = parse_observations(response, filters={"TERRITORIO": "07001"})
+        assert len(rows) == 1
+        assert rows[0] == {"Territori": "Alaro", "value": 500}
+
+
 # ===========================================================================
 # TestLanguageSelection -- lang parameter threading
 # ===========================================================================
