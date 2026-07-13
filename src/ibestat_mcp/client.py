@@ -13,6 +13,8 @@ Usage::
 
 from __future__ import annotations
 
+import os
+import ssl
 from typing import Any
 
 import httpx
@@ -21,6 +23,43 @@ BASE_URL = "https://ibestat.es/edatos/apis/statistical-resources/v1.0"
 STRUCTURAL_BASE_URL = "https://ibestat.es/edatos/apis/structural-resources/v1.0"
 OPERATIONS_BASE_URL = "https://ibestat.es/edatos/apis/operations/v1.0"
 TIMEOUT = 30.0
+
+# Environment variables that conventionally point at a custom CA bundle,
+# checked in priority order. httpx/certifi does NOT read these on its own
+# (unlike curl/OpenSSL), so behind a TLS-inspecting corporate proxy or a
+# sandboxed dev environment with its own intercepting root CA, the default
+# certifi bundle fails with CERTIFICATE_VERIFY_FAILED even though the
+# system trust store (and curl) accepts the connection fine. Honouring
+# these variables lets operators point the client at the right bundle
+# without any code changes. When none are set, behaviour is unchanged
+# (httpx's default certifi-backed verification).
+_CA_BUNDLE_ENV_VARS = (
+    "SSL_CERT_FILE",  # OpenSSL / curl convention
+    "REQUESTS_CA_BUNDLE",  # requests / common Python tooling convention
+    "CURL_CA_BUNDLE",  # curl convention (some proxies document this one)
+    "NODE_EXTRA_CA_CERTS",  # Node.js convention; some sandboxes only set this
+)
+
+
+def _resolve_ssl_verify() -> ssl.SSLContext | bool:
+    """Build the ``verify`` argument for the httpx client.
+
+    Checks ``_CA_BUNDLE_ENV_VARS`` in order for a custom CA bundle path.
+    If one is found, an explicit ``ssl.SSLContext`` is built from it
+    (httpx deprecates passing a bare path string). Otherwise, ``True`` is
+    returned so httpx falls back to its default certifi-backed bundle.
+
+    Returns
+    -------
+    ssl.SSLContext | bool
+        An SSL context trusting the custom bundle, or ``True`` for the
+        default behaviour.
+    """
+    for var in _CA_BUNDLE_ENV_VARS:
+        path = os.environ.get(var)
+        if path:
+            return ssl.create_default_context(cafile=path)
+    return True
 
 
 class IbestatError(Exception):
@@ -48,7 +87,7 @@ class IbestatClient:
         self._http: httpx.AsyncClient | None = None
 
     async def __aenter__(self) -> IbestatClient:
-        self._http = httpx.AsyncClient(timeout=TIMEOUT)
+        self._http = httpx.AsyncClient(timeout=TIMEOUT, verify=_resolve_ssl_verify())
         return self
 
     async def __aexit__(self, *args: Any) -> None:
